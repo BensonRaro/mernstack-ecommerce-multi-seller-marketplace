@@ -1,0 +1,45 @@
+{
+  "name": "backend",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Multi-user Ecommerce Platform - Backend API",
+  "main": "src/server.ts",
+  "scripts": {
+    "start": "bun run src/server.ts",
+    "dev": "nodemon",
+    "contract:emit": "prisma contract emit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@better-auth/prisma-adapter": "^1.7.1",
+    "@better-auth/stripe": "^1.7.2",
+    "@prisma/client": "6.19",
+    "better-auth": "^1.7.1",
+    "bun-types": "^1.4.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "helmet": "^8.3.0",
+    "morgan": "^1.11.0",
+    "stripe": "^22.0.0",
+    "typescript": "^5.9.3",
+    "undici-types": "^8.3.0",
+    "uploadthing": "^7.7.4"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/morgan": "^1.9.10",
+    "@types/node": "^26.3.0",
+    "nodemon": "^3.1.14",
+    "prisma": "6.19",
+    "ts-node": "^10.9.2"
+  }
+}

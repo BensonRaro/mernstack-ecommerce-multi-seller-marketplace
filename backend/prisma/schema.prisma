@@ -1,0 +1,251 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+	provider = "mongodb"
+	url      = env("DATABASE_URL")
+}
+
+// to be updated later
+model User {
+	id            String    @id @map("_id")
+	email         String    @unique
+	name          String?
+	image         String?
+	emailVerified Boolean   @default(false)
+	role          String    @default("buyer")
+	banned        Boolean   @default(false)
+	banReason     String?
+	banExpires    DateTime?
+	createdAt     DateTime  @default(now())
+	updatedAt     DateTime  @updatedAt
+	stripeCustomerId String?
+
+	sessions      Session[]
+	accounts      Account[]
+	seller        Seller?
+	addresses     Address[]
+	phones        Phone[]
+	orders        Order[]
+	reviews       Review[]
+	reviewComments ReviewComment[]
+
+	@@map("user")
+}
+
+model Seller {
+      id     String   @id @default(auto()) @map("_id") @db.ObjectId
+	userId      String    @unique
+	username    String?   @unique
+	name        String
+	image       String?
+	description String?
+	approved    Boolean   @default(false)
+	createdAt   DateTime  @default(now())
+	updatedAt   DateTime  @updatedAt
+
+	user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+	products    Product[]
+	promos      Promo[]
+
+	@@map("seller")
+}
+
+model Session {
+	id                    String   @id @map("_id")
+	token                 String   @unique
+	userId                String
+	expiresAt             DateTime
+	ipAddress             String?
+	userAgent             String?
+	fresh                 Boolean?
+	impersonatedBy        String?
+	createdAt             DateTime @default(now())
+	updatedAt             DateTime @updatedAt
+
+	user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@map("session")
+}
+
+model Account {
+	id           String    @id @map("_id")
+	userId       String
+	issuer       String
+	accountId    String
+	providerId   String
+	accessToken  String?
+	refreshToken String?
+	idToken      String?
+	accessTokenExpiresAt DateTime?
+	refreshTokenExpiresAt DateTime?
+	scope        String?
+	password     String?
+	createdAt    DateTime  @default(now())
+	updatedAt    DateTime  @updatedAt
+
+	user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+	@@unique([issuer, accountId])
+	@@map("account")
+}
+
+model Verification {
+	id          String    @id @map("_id")
+	identifier  String
+	value       String
+	expiresAt   DateTime
+	createdAt   DateTime  @default(now())
+	updatedAt   DateTime  @updatedAt
+
+	@@unique([identifier, value])
+	@@map("verification")
+}
+
+model Product {
+	id          String   @id @default(auto()) @map("_id") @db.ObjectId
+	name        String
+	description String?
+	price       Float
+	discount    Float    @default(0)
+	category    String
+	images      String[]
+	stock       Int      @default(0)
+	sizes       String[]
+	colors      String[]
+	gender      String?
+	status      String   @default("draft")
+	sellerId    String
+	createdAt   DateTime @default(now())
+	updatedAt   DateTime @updatedAt
+
+	seller      Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+	orderItems  OrderItem[]
+	reviews     Review[]
+
+	@@map("product")
+}
+
+model Address {
+	id        String   @id @default(auto()) @map("_id") @db.ObjectId
+	userId    String
+	label     String   @default("Home")
+	street    String
+	city      String
+	zip       String
+	country   String   @default("United States")
+	isDefault Boolean  @default(false)
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+	orders Order[]
+
+	@@map("address")
+}
+
+model Phone {
+	id        String   @id @default(auto()) @map("_id") @db.ObjectId
+	userId    String
+	number    String
+	label     String   @default("Mobile")
+	isDefault Boolean  @default(false)
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+	orders Order[]
+
+	@@map("phone")
+}
+
+model Promo {
+	id              String   @id @default(auto()) @map("_id") @db.ObjectId
+	code            String
+	discountPercent Float
+	active          Boolean  @default(true)
+	sellerId        String?  @db.ObjectId
+	expiresAt       DateTime?
+	createdAt       DateTime @default(now())
+	updatedAt       DateTime @updatedAt
+
+	seller Seller? @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+	@@unique([code, sellerId])
+	@@map("promo")
+}
+
+model Order {
+	id             String   @id @default(auto()) @map("_id") @db.ObjectId
+	userId         String
+	status         String   @default("pending")
+	deliveryStatus String
+	paymentMethod  String
+	paymentStatus  String   @default("pending")
+	addressId      String?  @db.ObjectId
+	phoneId        String?  @db.ObjectId
+	addressSnapshot Json?
+	phoneNumber    String?
+	promoCode      String?
+	discount       Float    @default(0)
+	subtotal       Float
+	deliveryFee    Float    @default(0)
+	total          Float
+	stripeSessionId String?  @unique
+	createdAt      DateTime @default(now())
+	updatedAt      DateTime @updatedAt
+
+	user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+	address Address?   @relation(fields: [addressId], references: [id])
+	phone   Phone?     @relation(fields: [phoneId], references: [id])
+	items   OrderItem[]
+
+	@@map("order")
+}
+
+model OrderItem {
+	id        String @id @default(auto()) @map("_id") @db.ObjectId
+	orderId   String @db.ObjectId
+	productId String @db.ObjectId
+	quantity  Int
+	price     Float
+	sellerId  String @db.ObjectId
+
+	order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+	product Product @relation(fields: [productId], references: [id])
+
+	@@map("orderItem")
+}
+
+model Review {
+	id        String   @id @default(auto()) @map("_id") @db.ObjectId
+	productId String   @db.ObjectId
+	userId    String
+	rating    Int
+	comment   String
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+	product  Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+	comments ReviewComment[]
+
+	@@unique([productId, userId])
+	@@map("review")
+}
+
+model ReviewComment {
+	id        String   @id @default(auto()) @map("_id") @db.ObjectId
+	reviewId  String   @db.ObjectId
+	userId    String
+	comment   String
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+	review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+	@@map("reviewComment")
+}
