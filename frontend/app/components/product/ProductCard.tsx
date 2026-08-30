@@ -1,4 +1,4 @@
-import { Heart, Package, ShoppingBag } from "lucide-react";
+import { Heart, Package, ShoppingBag, Star } from "lucide-react";
 import { Link } from "react-router";
 import { cn } from "@/lib/utils";
 import { toast } from "@/components/ui/toast";
@@ -152,6 +152,18 @@ export function ProductCard({ product, className }: ProductCardProps) {
             {product.name}
           </Link>
         </h3>
+
+        <div className="flex items-center gap-1">
+          <span className="flex items-center gap-0.5 text-amber-500">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className={`size-3 ${i < Math.round(product.avgRating ?? 0) ? "fill-amber-500" : "fill-amber-500/15 text-amber-500/15"}`} />
+            ))}
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            {product.totalReviews > 0 ? `${product.avgRating.toFixed(1)} (${product.totalReviews})` : "No reviews"}
+          </span>
+          {product.unitsSold > 0 && <span className="ml-auto text-[11px] text-muted-foreground">{product.unitsSold} sold</span>}
+        </div>
 
         <div className="mt-auto flex items-baseline gap-2">
           <span className="font-heading text-[15px] font-semibold tracking-tight text-foreground">

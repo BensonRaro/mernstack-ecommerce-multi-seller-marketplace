@@ -105,6 +105,10 @@ export async function listProducts(req: Request, res: Response) {
     const status = (req.query.status as string)?.trim() || "";
     const mine = req.query.mine === "true";
     const sellerIdParam = (req.query.sellerId as string)?.trim() || "";
+    const minPrice = req.query.minPrice ? parseFloat(req.query.minPrice as string) : undefined;
+    const maxPrice = req.query.maxPrice ? parseFloat(req.query.maxPrice as string) : undefined;
+    const ratingParam = req.query.rating ? parseFloat(req.query.rating as string) : undefined;
+    const sort = (req.query.sort as string)?.trim() || "";
 
     const where: Record<string, unknown> = {};
 
@@ -122,6 +126,8 @@ export async function listProducts(req: Request, res: Response) {
 
     if (status && VALID_STATUSES.includes(status)) {
       (where as any).status = status;
+    } else if (!mine && !sellerIdParam && !status) {
+      (where as any).status = "active";
     }
 
     if (sellerIdParam) {
@@ -152,22 +158,125 @@ export async function listProducts(req: Request, res: Response) {
       (where as any).sellerId = seller.id;
     }
 
-    const skip = (page - 1) * limit;
+    const needsMemoryProcessing = Boolean(
+      (minPrice !== undefined && !isNaN(minPrice)) ||
+        (maxPrice !== undefined && !isNaN(maxPrice)) ||
+        (ratingParam !== undefined && !isNaN(ratingParam)) ||
+        sort
+    );
 
-    const [products, total] = await Promise.all([
-      prisma.product.findMany({
-        where: where as never,
-        include: { seller: { select: { id: true, name: true, image: true, username: true } } },
-        orderBy: { createdAt: "desc" },
-        skip,
-        take: limit,
-      }),
-      prisma.product.count({ where: where as never }),
-    ]);
+    if (!needsMemoryProcessing) {
+      const skip = (page - 1) * limit;
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where: where as never,
+          include: { seller: { select: { id: true, name: true, image: true, username: true } } },
+          orderBy: { createdAt: "desc" },
+          skip,
+          take: limit,
+        }),
+        prisma.product.count({ where: where as never }),
+      ]);
 
+      const productIds = products.map((p) => p.id);
+      let ratingMap = new Map<string, { avg: number; total: number }>();
+      let salesMap = new Map<string, number>();
+      if (productIds.length) {
+        const [reviews, orderItems] = await Promise.all([
+          prisma.review.findMany({ where: { productId: { in: productIds } }, select: { productId: true, rating: true } }),
+          prisma.orderItem.findMany({ where: { productId: { in: productIds }, order: { status: { not: "cancelled" } } }, select: { productId: true, orderId: true } }),
+        ]);
+        const rMap = new Map<string, number[]>();
+        for (const r of reviews) {
+          const arr = rMap.get(r.productId) ?? [];
+          arr.push(r.rating);
+          rMap.set(r.productId, arr);
+        }
+        for (const [pid, ratings] of rMap) {
+          const totalR = ratings.length;
+          const avg = totalR ? ratings.reduce((s, v) => s + v, 0) / totalR : 0;
+          ratingMap.set(pid, { avg: Number(avg.toFixed(1)), total: totalR });
+        }
+        const sMap = new Map<string, Set<string>>();
+        for (const it of orderItems) {
+          const set = sMap.get(it.productId) ?? new Set<string>();
+          set.add(it.orderId);
+          sMap.set(it.productId, set);
+        }
+        salesMap = new Map(Array.from(sMap.entries()).map(([k, v]) => [k, v.size]));
+      }
+
+      const enriched = products.map((p) => ({
+        ...p,
+        avgRating: ratingMap.get(p.id)?.avg ?? 0,
+        totalReviews: ratingMap.get(p.id)?.total ?? 0,
+        unitsSold: salesMap.get(p.id) ?? 0,
+      }));
+
+      const totalPages = Math.ceil(total / limit) || 1;
+      return res.json({ products: enriched, total, page, limit, totalPages });
+    }
+
+    const allProducts = await prisma.product.findMany({
+      where: where as never,
+      include: { seller: { select: { id: true, name: true, image: true, username: true } } },
+    });
+
+    const productIds = allProducts.map((p) => p.id);
+    let ratingMap = new Map<string, { avg: number; total: number }>();
+    let salesMap = new Map<string, number>();
+    if (productIds.length) {
+      const [reviews, orderItems] = await Promise.all([
+        prisma.review.findMany({ where: { productId: { in: productIds } }, select: { productId: true, rating: true } }),
+        prisma.orderItem.findMany({ where: { productId: { in: productIds }, order: { status: { not: "cancelled" } } }, select: { productId: true, orderId: true } }),
+      ]);
+      const rMap = new Map<string, number[]>();
+      for (const r of reviews) {
+        const arr = rMap.get(r.productId) ?? [];
+        arr.push(r.rating);
+        rMap.set(r.productId, arr);
+      }
+      for (const [pid, ratings] of rMap) {
+        const totalR = ratings.length;
+        const avg = totalR ? ratings.reduce((s, v) => s + v, 0) / totalR : 0;
+        ratingMap.set(pid, { avg: Number(avg.toFixed(1)), total: totalR });
+      }
+      const sMap = new Map<string, Set<string>>();
+      for (const it of orderItems) {
+        const set = sMap.get(it.productId) ?? new Set<string>();
+        set.add(it.orderId);
+        sMap.set(it.productId, set);
+      }
+      salesMap = new Map(Array.from(sMap.entries()).map(([k, v]) => [k, v.size]));
+    }
+
+    let enriched = allProducts.map((p) => {
+      const discounted = p.discount > 0 ? p.price * (1 - p.discount / 100) : p.price;
+      return {
+        ...p,
+        discountedPrice: discounted,
+        avgRating: ratingMap.get(p.id)?.avg ?? 0,
+        totalReviews: ratingMap.get(p.id)?.total ?? 0,
+        unitsSold: salesMap.get(p.id) ?? 0,
+      } as typeof p & { discountedPrice: number; avgRating: number; totalReviews: number; unitsSold: number };
+    });
+
+    if (minPrice !== undefined && !isNaN(minPrice)) enriched = enriched.filter((p) => (p as never as { discountedPrice: number }).discountedPrice >= minPrice);
+    if (maxPrice !== undefined && !isNaN(maxPrice)) enriched = enriched.filter((p) => (p as never as { discountedPrice: number }).discountedPrice <= maxPrice);
+    if (ratingParam !== undefined && !isNaN(ratingParam)) enriched = enriched.filter((p) => p.avgRating >= ratingParam);
+
+    if (sort === "price_asc") enriched.sort((a, b) => (a as never as { discountedPrice: number }).discountedPrice - (b as never as { discountedPrice: number }).discountedPrice);
+    else if (sort === "price_desc") enriched.sort((a, b) => (b as never as { discountedPrice: number }).discountedPrice - (a as never as { discountedPrice: number }).discountedPrice);
+    else if (sort === "rating_desc") enriched.sort((a, b) => b.avgRating - a.avgRating || b.totalReviews - a.totalReviews);
+    else if (sort === "newest") enriched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    else enriched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+    const total = enriched.length;
     const totalPages = Math.ceil(total / limit) || 1;
+    const start = (page - 1) * limit;
+    const paginated = enriched.slice(start, start + limit).map(({ discountedPrice: _d, ...rest }) => rest);
 
-    return res.json({ products, total, page, limit, totalPages });
+    return res.json({ products: paginated, total, page, limit, totalPages });
   } catch (error) {
     console.error("Error listing products:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -184,7 +293,25 @@ export async function getBestSellers(req: Request, res: Response) {
         quantity: true,
         price: true,
         orderId: true,
-        product: { select: { id: true, name: true, images: true, price: true, discount: true, category: true, stock: true, sizes: true, colors: true, sellerId: true, createdAt: true, updatedAt: true, seller: { select: { id: true, name: true, image: true, username: true } } } },
+        product: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            images: true,
+            price: true,
+            discount: true,
+            category: true,
+            stock: true,
+            sizes: true,
+            colors: true,
+            gender: true,
+            sellerId: true,
+            createdAt: true,
+            updatedAt: true,
+            seller: { select: { id: true, name: true, image: true, username: true } },
+          },
+        },
       },
     });
 
@@ -200,9 +327,9 @@ export async function getBestSellers(req: Request, res: Response) {
       }
     }
 
-    const sorted = Array.from(map.values())
+    let sorted = Array.from(map.values())
       .map((v) => ({ product: v.product, unitsSold: v.unitsSold, revenue: Math.round(v.revenue * 100) / 100, orders: v.orders.size }))
-      .sort((a, b) => b.unitsSold - a.unitsSold || b.revenue - a.revenue)
+      .sort((a, b) => b.orders - a.orders || b.unitsSold - a.unitsSold || b.revenue - a.revenue)
       .slice(0, limit);
 
     if (sorted.length === 0) {
@@ -212,10 +339,43 @@ export async function getBestSellers(req: Request, res: Response) {
         take: limit,
         include: { seller: { select: { id: true, name: true, image: true, username: true } } },
       });
-      return res.json({ bestSellers: fallback.map((p) => ({ product: p, unitsSold: 0, revenue: 0, orders: 0 })) });
+      const fallbackIds = fallback.map((p) => p.id);
+      const reviews = fallbackIds.length ? await prisma.review.findMany({ where: { productId: { in: fallbackIds } }, select: { productId: true, rating: true } }) : [];
+      const rMap = new Map<string, number[]>();
+      for (const r of reviews) {
+        const arr = rMap.get(r.productId) ?? [];
+        arr.push(r.rating);
+        rMap.set(r.productId, arr);
+      }
+      const enrichedFallback = fallback.map((p) => {
+        const ratings = rMap.get(p.id) ?? [];
+        const total = ratings.length;
+        const avg = total ? ratings.reduce((s, v) => s + v, 0) / total : 0;
+        return { product: { ...p, avgRating: Number(avg.toFixed(1)), totalReviews: total }, unitsSold: 0, revenue: 0, orders: 0 };
+      });
+      return res.json({ bestSellers: enrichedFallback });
     }
 
-    return res.json({ bestSellers: sorted });
+    const productIds = sorted.map((s) => s.product!.id);
+    const reviews = await prisma.review.findMany({ where: { productId: { in: productIds } }, select: { productId: true, rating: true } });
+    const rMap = new Map<string, number[]>();
+    for (const r of reviews) {
+      const arr = rMap.get(r.productId) ?? [];
+      arr.push(r.rating);
+      rMap.set(r.productId, arr);
+    }
+    const ratingMap = new Map<string, { avg: number; total: number }>();
+    for (const [pid, ratings] of rMap) {
+      const total = ratings.length;
+      const avg = total ? ratings.reduce((s, v) => s + v, 0) / total : 0;
+      ratingMap.set(pid, { avg: Number(avg.toFixed(1)), total });
+    }
+    const enriched = sorted.map((s) => ({
+      ...s,
+      product: { ...s.product!, avgRating: ratingMap.get(s.product!.id)?.avg ?? 0, totalReviews: ratingMap.get(s.product!.id)?.total ?? 0 },
+    }));
+
+    return res.json({ bestSellers: enriched });
   } catch (e) {
     console.error("getBestSellers", e);
     return res.status(500).json({ error: "Failed to fetch best sellers" });
@@ -235,7 +395,15 @@ export async function getProduct(req: Request, res: Response) {
       return res.status(404).json({ error: "Product not found" });
     }
 
-    return res.json({ product });
+    const [reviews, orderItems] = await Promise.all([
+      prisma.review.findMany({ where: { productId: id }, select: { rating: true } }),
+      prisma.orderItem.findMany({ where: { productId: id, order: { status: { not: "cancelled" } } }, select: { orderId: true } }),
+    ]);
+    const totalReviews = reviews.length;
+    const avgRating = totalReviews ? Number((reviews.reduce((s, r) => s + r.rating, 0) / totalReviews).toFixed(1)) : 0;
+    const unitsSold = new Set(orderItems.map((o) => o.orderId)).size;
+
+    return res.json({ product: { ...product, avgRating, totalReviews, unitsSold } });
   } catch (error) {
     console.error("Error fetching product:", error);
     return res.status(500).json({ error: "Internal server error" });

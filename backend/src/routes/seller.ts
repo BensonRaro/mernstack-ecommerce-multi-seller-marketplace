@@ -259,10 +259,27 @@ router.get("/stats", requireAuth, requireSeller, async (req, res) => {
         existing.orders.add(it.orderId);
       }
     }
-    const bestSellers = Array.from(productMap.values())
+    let bestSellers = Array.from(productMap.values())
       .map((v) => ({ product: v.product, unitsSold: v.unitsSold, revenue: Math.round(v.revenue * 100) / 100, orders: v.orders.size }))
-      .sort((a, b) => b.unitsSold - a.unitsSold || b.revenue - a.revenue)
+      .sort((a, b) => b.orders - a.orders || b.unitsSold - a.unitsSold || b.revenue - a.revenue)
       .slice(0, 5);
+
+    if (bestSellers.length) {
+      const ids = bestSellers.map((b) => b.product.id);
+      const reviews = await prisma.review.findMany({ where: { productId: { in: ids } }, select: { productId: true, rating: true } });
+      const rMap = new Map<string, number[]>();
+      for (const r of reviews) {
+        const arr = rMap.get(r.productId) ?? [];
+        arr.push(r.rating);
+        rMap.set(r.productId, arr);
+      }
+      bestSellers = bestSellers.map((b) => {
+        const ratings = rMap.get(b.product.id) ?? [];
+        const total = ratings.length;
+        const avg = total ? ratings.reduce((s, v) => s + v, 0) / total : 0;
+        return { ...b, product: { ...b.product, avgRating: Number(avg.toFixed(1)), totalReviews: total } };
+      });
+    }
 
     return res.json({
       totalProducts: productCount,

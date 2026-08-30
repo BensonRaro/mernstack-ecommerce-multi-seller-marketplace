@@ -66,6 +66,22 @@ export function useSellerOrders(params: SellerOrdersParams = {}) {
   });
 }
 
+export function useMyOrders(params: SellerOrdersParams = {}) {
+  const { page = 1, limit = 10, search, paymentStatus, deliveryStatus } = params;
+  const qs = new URLSearchParams();
+  qs.set("page", String(page));
+  qs.set("limit", String(limit));
+  if (search) qs.set("search", search);
+  if (paymentStatus) qs.set("paymentStatus", paymentStatus);
+  if (deliveryStatus) qs.set("deliveryStatus", deliveryStatus);
+
+  return useQuery({
+    queryKey: ["my-orders", params],
+    queryFn: () => api.get<SellerOrdersResponse>(`/api/orders/my?${qs.toString()}`),
+    placeholderData: keepPreviousData,
+  });
+}
+
 export function useUpdateOrderStatus() {
   const qc = useQueryClient();
   return useMutation({

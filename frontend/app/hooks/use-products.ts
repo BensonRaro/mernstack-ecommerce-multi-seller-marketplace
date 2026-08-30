@@ -18,6 +18,9 @@ export interface Product {
   createdAt: string;
   updatedAt: string;
   seller: { id: string; name: string; image: string | null; username: string | null };
+  avgRating?: number;
+  totalReviews?: number;
+  unitsSold?: number;
 }
 
 interface CreateProductData {
@@ -42,6 +45,10 @@ export interface ProductsParams {
   status?: string;
   mine?: boolean;
   sellerId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  rating?: number;
+  sort?: string;
 }
 
 export interface ProductsResponse {
@@ -139,18 +146,26 @@ export function useNewArrivals(limit = 8) {
 }
 
 export function usePublicProducts(params: Omit<ProductsParams, "mine" | "sellerId"> = {}) {
-  const { page = 1, limit = 12, search, category, status = "active" } = params;
+  const { page = 1, limit = 12, search, category, status = "active", minPrice, maxPrice, rating, sort } = params;
   const qs = new URLSearchParams();
   qs.set("page", String(page));
   qs.set("limit", String(limit));
   if (search) qs.set("search", search);
   if (category) qs.set("category", category);
   if (status) qs.set("status", status);
+  if (minPrice !== undefined) qs.set("minPrice", String(minPrice));
+  if (maxPrice !== undefined) qs.set("maxPrice", String(maxPrice));
+  if (rating !== undefined) qs.set("rating", String(rating));
+  if (sort) qs.set("sort", sort);
   return useQuery({
     queryKey: ["public-products", params],
     queryFn: async () => api.get<ProductsResponse>(`/api/products?${qs.toString()}`),
     placeholderData: keepPreviousData,
   });
+}
+
+export function useShopProducts(params: ProductsParams & { sort?: string } = {}) {
+  return usePublicProducts(params);
 }
 
 export interface BestSeller {

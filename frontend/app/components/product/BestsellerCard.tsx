@@ -8,17 +8,35 @@ import type { Product } from "@/hooks/use-products";
 interface Props {
   product: Product;
   unitsSold?: number;
+  sales?: number;
   rank?: number;
   className?: string;
 }
 
-export function BestsellerCard({ product, unitsSold, rank, className }: Props) {
+function RatingStars({ avg, total }: { avg: number; total: number }) {
+  return (
+    <span className="flex items-center gap-1 text-amber-500">
+      {Array.from({ length: 5 }).map((_, i) => {
+        const filled = i < Math.round(avg);
+        return <Star key={i} className={`size-3 ${filled ? "fill-amber-500" : "fill-amber-500/20 text-amber-500/20"}`} />;
+      })}
+      <span className="ml-1 text-[11px] text-muted-foreground">
+        {total > 0 ? `${avg.toFixed(1)} (${total})` : "No reviews"}
+      </span>
+    </span>
+  );
+}
+
+export function BestsellerCard({ product, unitsSold, sales, rank, className }: Props) {
   const discounted = product.discount > 0 ? product.price * (1 - product.discount / 100) : product.price;
   const hasDiscount = product.discount > 0;
   const addToCart = useCartStore((s) => s.addItem);
   const cartItems = useCartStore((s) => s.items);
   const isInCart = cartItems.some((i) => i.product.id === product.id);
   const outOfStock = product.stock === 0;
+  const avg = (product as { avgRating?: number }).avgRating ?? 0;
+  const total = (product as { totalReviews?: number }).totalReviews ?? 0;
+  const sold = sales ?? unitsSold ?? (product as { unitsSold?: number }).unitsSold ?? 0;
 
   return (
     <article
@@ -57,14 +75,7 @@ export function BestsellerCard({ product, unitsSold, rank, className }: Props) {
           {hasDiscount && <span className="text-xs text-muted-foreground line-through">${product.price.toFixed(2)}</span>}
         </div>
 
-        <div className="flex items-center gap-1 text-amber-500">
-          <Star className="size-3 fill-amber-500" />
-          <Star className="size-3 fill-amber-500" />
-          <Star className="size-3 fill-amber-500" />
-          <Star className="size-3 fill-amber-500" />
-          <Star className="size-3 fill-amber-500/30" />
-          <span className="ml-1 text-[11px] text-muted-foreground">{unitsSold !== undefined ? `${unitsSold} sold` : product.category.replace("-", " ")}</span>
-        </div>
+        <RatingStars avg={avg} total={total} />
 
         <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
           {product.description ? product.description.slice(0, 80) : "Premium quality product — loved by customers."}
@@ -87,9 +98,9 @@ export function BestsellerCard({ product, unitsSold, rank, className }: Props) {
             <ShoppingBag className="size-3.5" />
             {outOfStock ? "Out of stock" : "Quick Add"}
           </button>
-          {unitsSold !== undefined && unitsSold > 0 && (
-            <span className="hidden text-[11px] font-medium text-muted-foreground sm:inline">{unitsSold} sales</span>
-          )}
+          <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+            {sold > 0 ? `${sold} sold` : "No sales yet"}
+          </span>
         </div>
       </div>
     </article>

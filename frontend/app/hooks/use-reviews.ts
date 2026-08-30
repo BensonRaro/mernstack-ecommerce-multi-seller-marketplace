@@ -98,3 +98,10 @@ export function useDeleteComment() {
     },
   });
 }
+
+export function useUserReviews() {
+  return useQuery({
+    queryKey: ["user-reviews"],
+    queryFn: () => api.get<{ reviews: Review[] }>("/api/user/reviews"),
+  });
+}

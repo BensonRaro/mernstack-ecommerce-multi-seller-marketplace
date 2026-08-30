@@ -72,7 +72,7 @@ export function SellerBestSellers({ bestSellers }: { bestSellers: BestSellerItem
         ) : (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {bestSellers.map((item, i) => (
-              <BestsellerCard key={item.product.id} product={item.product} unitsSold={item.unitsSold} rank={i} />
+              <BestsellerCard key={item.product.id} product={item.product} sales={item.orders} rank={i} />
             ))}
           </div>
         )}

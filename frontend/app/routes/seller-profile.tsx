@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router";
+import { useParams, Link, data as routerData } from "react-router";
 import { Store, Star, Package, Calendar, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,34 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { ProductCard } from "@/components/product/ProductCard";
 import { useSellerByUsername } from "@/hooks/use-auth";
+
+const RESERVED_USERNAMES = new Set([
+  "shop",
+  "seller",
+  "checkout",
+  "product",
+  "products",
+  "login",
+  "signup",
+  "admin",
+  "api",
+  "s",
+  "u",
+  "cart",
+  "wishlist",
+  "order-confirmation",
+  "orders",
+  "settings",
+  "promos",
+]);
+
+export async function clientLoader({ params }: { params: { username?: string } }) {
+  const username = params.username?.toLowerCase();
+  if (username && RESERVED_USERNAMES.has(username)) {
+    throw routerData(null, { status: 404, statusText: "Not Found" });
+  }
+  return null;
+}
 
 function StarRating({ rating }: { rating: number }) {
   return (

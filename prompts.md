@@ -99,6 +99,37 @@
 
 - Best seller should be displayed on the home page and seller dashboard, using the productcard on the image
 
-37. update the product cards to load true product ratings based on their reviews.
+37. update the product cards to load real product ratings based on their reviews. Also card display the wrong sold(sales) items.
 
 38. shop page - we will display all the products from the sellers. The user will be able to filter the products by category, price, and rating. The user will also be able to sort the products by price, rating, and newest. Use tanstack query for api calls. Use shadcn ui components but customize them to match the overall design of the application.
+
+- Since it may be a large number of products, we will use pagination and search functionality.
+- read: https://cdn.dribbble.com/userupload/16527214/file/original-30290b90691fcf1644a9b0ed03e1eaad.png?resize=1024x768&vertical=center
+
+- the issue is we are using /{route-name} for seller
+- FIX: /shop to display the shop instead of seller
+- filter drawer is not fully displaying - some part of the left side are not visible
+
+39. read AGENTS.md and build user profile page - we will display the user's profile information, orders(seller order can be reused except the functionality), and reviews. Use tanstack query for api calls. Use shadcn ui components but customize them to match the overall design of the application.
+
+- setting is where we will display user's profile - no editing
+- user address and phone number CRUD - Afterward update checkout page to use real address and phone number
+- the model is taking a lot of time, let change it
+
+read AGENTS.md, profile page
+
+- Header missing
+- backend/src/routes/user.ts - should contain only the routes while the functionality go to backend/src/controllers/user.ts
+- I have one review but it's not displaying on reviews tab
+- phone diolog has an issue, opens correct, but onclick on any are it closes - recommend to use shadcn diolog like other sections of the codebase.
+- No option to add address. Also make sure checkout page phone number and address was updated to use user information(phone number and address).
+- on the orders tab, I liked the design used on the sellers orders page - maybe it can be reused or changed to a rolebased one.
+
+- On profile page, all save buttons are off the dialog, also edit buttons are available even though the phone number and address are empty.
+- Checkout page is not using the real user address and phone number. It should be updated to use the real user information. - Currently using the constants/static/sample data. The user should be able to select from their saved addresses and phone numbers on the checkout page. If they don't have any saved addresses or phone numbers, they should be prompted to add them before proceeding with the checkout.
+
+- Fix: Remaining errors are pre-existing in codebase (ProductCard, ProductInfo, seller orders/products, shop)
+- On phone number and email and address delete - let use alert like other sections of the code base.
+- Update the checkout page to display the default address and phone number - as well as an option to change - directing user to their profile page.
+- On the profile page - order tab let have some border and shadow
+- fix an error when loading profile page
