@@ -5,7 +5,7 @@ export function useSellerMe() {
   return useQuery({
     queryKey: ["seller-me"],
     queryFn: async () => {
-      return api.get<{ seller: { id: string; name: string; username: string | null; approved: boolean; image: string | null; description: string | null } | null }>(
+      return api.get<{ seller: { id: string; name: string; username: string | null; approved: boolean; revokedAt: string | null; revokedReason: string | null; image: string | null; description: string | null } | null }>(
         "/api/seller/me"
       );
     },
@@ -32,7 +32,7 @@ export function useSellerByUsername(username: string | undefined) {
     enabled: !!username,
     queryFn: async () => {
       return api.get<{
-        seller: { id: string; name: string; username: string; image: string | null; description: string | null; approved: boolean; createdAt: string; user: { id: string; name: string | null; image: string | null } };
+        seller: { id: string; name: string; username: string; image: string | null; description: string | null; approved: boolean; revokedAt: string | null; revokedReason: string | null; createdAt: string; user: { id: string; name: string | null; image: string | null } };
         products: import("@/hooks/use-products").Product[];
         reviews: Array<{ id: string; rating: number; comment: string; createdAt: string; user: { id: string; name: string | null; image: string | null }; product: { id: string; name: string; images: string[] } }>;
         avgRating: number;

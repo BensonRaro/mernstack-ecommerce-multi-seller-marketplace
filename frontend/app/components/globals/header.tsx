@@ -13,6 +13,8 @@ import {
   LayoutDashboard,
   Clock,
   Loader2,
+  ShieldCheck,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -56,6 +58,7 @@ export function Header() {
   const user = session?.user;
   const isLoggedIn = !!user;
   const isSeller = user?.role === "seller";
+  const isAdmin = user?.role === "admin";
   const { data: sellerData, isLoading: sellerLoading } = useSellerMe();
   const seller = isSeller ? sellerData?.seller : null;
 
@@ -216,13 +219,32 @@ export function Header() {
                               <LayoutDashboard className="size-4" />
                               Seller Dashboard
                             </Link>
+                          ) : seller?.revokedAt ? (
+                            <Link
+                              to="/seller"
+                              onClick={() => setUserMenuOpen(false)}
+                              className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                            >
+                              <XCircle className="size-4" />
+                              <span>Seller account revoked</span>
+                            </Link>
                           ) : (
-                            <div className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2 px-4 py-2 text-xs text-muted-foreground">
                               <Clock className="size-4" />
                               <span>Seller account pending approval</span>
                             </div>
                           )}
                         </>
+                      )}
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        >
+                          <ShieldCheck className="size-4" />
+                          Admin Dashboard
+                        </Link>
                       )}
                       <button
                         type="button"

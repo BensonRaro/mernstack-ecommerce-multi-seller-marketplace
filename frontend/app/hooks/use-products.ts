@@ -14,6 +14,7 @@ export interface Product {
   colors: string[];
   gender: string | null;
   status: string;
+  rejectionReason: string | null;
   sellerId: string;
   createdAt: string;
   updatedAt: string;

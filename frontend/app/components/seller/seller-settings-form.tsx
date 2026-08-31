@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Store, Clock, CheckCircle2, Save, RotateCcw, AtSign } from "lucide-react";
+import { Store, Clock, CheckCircle2, Save, RotateCcw, AtSign, XCircle, AlertTriangle } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -125,15 +125,27 @@ export function SellerSettingsForm() {
                   className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-widest uppercase ring-1 ${
                     seller.approved
                       ? "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20"
-                      : "bg-amber-500/10 text-amber-700 ring-amber-500/20"
+                      : seller.revokedAt
+                        ? "bg-destructive/10 text-destructive ring-destructive/20"
+                        : "bg-amber-500/10 text-amber-700 ring-amber-500/20"
                   }`}
                 >
-                  {seller.approved ? <CheckCircle2 className="size-3" /> : <Clock className="size-3" />}
-                  {seller.approved ? "Approved" : "Pending approval"}
+                  {seller.approved ? (
+                    <CheckCircle2 className="size-3" />
+                  ) : seller.revokedAt ? (
+                    <XCircle className="size-3" />
+                  ) : (
+                    <Clock className="size-3" />
+                  )}
+                  {seller.approved ? "Approved" : seller.revokedAt ? "Revoked" : "Pending approval"}
                 </span>
               </CardTitle>
               <CardDescription className="mt-1">
-                {seller.approved ? "Your store is active and visible to buyers." : "Your store is under review. You can still edit details."}
+                {seller.approved
+                  ? "Your store is active and visible to buyers."
+                  : seller.revokedAt
+                    ? "Your store has been revoked. Products are no longer visible."
+                    : "Your store is under review. You can still edit details."}
               </CardDescription>
             </div>
           </div>
@@ -146,6 +158,49 @@ export function SellerSettingsForm() {
           </div>
         </CardContent>
       </Card>
+
+      {!seller.approved && seller.revokedAt && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm normal-case tracking-tight text-destructive">
+              <XCircle className="size-4" />
+              Account Revoked
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Your seller account has been revoked. Your products are no longer visible on the platform, and you cannot create, edit, or delete products or promo codes.
+            </p>
+            {seller.revokedReason && (
+              <div className="rounded-lg border border-destructive/20 bg-card p-3">
+                <p className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
+                  Reason from admin
+                </p>
+                <p className="mt-1 text-sm leading-relaxed">{seller.revokedReason}</p>
+              </div>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Revoked on {new Date(seller.revokedAt).toLocaleString()}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {!seller.approved && !seller.revokedAt && (
+        <Card className="border-amber-500/30 bg-amber-500/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm normal-case tracking-tight text-amber-700">
+              <Clock className="size-4" />
+              Pending Approval
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Your seller application is under review. You can edit your store details while waiting for approval.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

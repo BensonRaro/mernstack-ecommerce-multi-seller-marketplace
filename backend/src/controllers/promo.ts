@@ -19,7 +19,12 @@ export async function createPromo(req: Request, res: Response) {
     const session = (req as any).session;
     const seller = await prisma.seller.findUnique({ where: { userId: session.user.id } });
     if (!seller) return res.status(404).json({ error: "Seller profile not found" });
-    if (!seller.approved) return res.status(403).json({ error: "Seller not approved" });
+    if (!seller.approved) {
+      if (seller.revokedAt) {
+        return res.status(403).json({ error: "Your seller account has been revoked." });
+      }
+      return res.status(403).json({ error: "Your seller account is pending approval." });
+    }
     const { code, discountPercent, active, expiresAt } = req.body as { code: string; discountPercent: number; active?: boolean; expiresAt?: string | null };
     if (!code || typeof code !== "string" || !code.trim()) return res.status(400).json({ error: "Code required" });
     const upper = code.trim().toUpperCase();
@@ -107,7 +112,13 @@ export async function validatePromo(req: Request, res: Response) {
     const upper = code.trim().toUpperCase();
     const now = new Date();
 
-    const promos = await prisma.promo.findMany({ where: { code: upper, active: true } });
+    const promos = await prisma.promo.findMany({
+      where: {
+        code: upper,
+        active: true,
+        OR: [{ sellerId: null }, { seller: { approved: true } }],
+      },
+    });
 
     const valid = promos.filter((p) => {
       if (p.expiresAt && new Date(p.expiresAt) < now) return false;
@@ -120,8 +131,9 @@ export async function validatePromo(req: Request, res: Response) {
     const sellerSet = new Set((sellerIds ?? []).filter(Boolean));
     const sellerMatch = valid.find((p) => p.sellerId && sellerSet.has(p.sellerId));
     if (sellerMatch) {
-      const seller = await prisma.seller.findUnique({ where: { id: sellerMatch.sellerId! }, select: { name: true } });
-      return res.json({ valid: true, promo: sellerMatch, sellerName: seller?.name ?? null });
+    const seller = await prisma.seller.findUnique({ where: { id: sellerMatch.sellerId! }, select: { name: true, approved: true } });
+    if (!seller?.approved) return res.status(404).json({ error: "Promo not applicable to items in your cart" });
+    return res.json({ valid: true, promo: sellerMatch, sellerName: seller?.name ?? null });
     }
 
     const globalMatch = valid.find((p) => !p.sellerId);

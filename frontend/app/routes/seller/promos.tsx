@@ -8,7 +8,9 @@ import { Empty, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@
 import { Switch } from "@/components/ui/switch";
 import { SearchInput } from "@/components/globals/search-input";
 import { PromoDialog } from "@/components/promo/PromoDialog";
+import { SellerRevocationBanner } from "@/components/seller/seller-revocation-banner";
 import { useSellerPromos, useCreatePromo, useUpdatePromo, useDeletePromo } from "@/hooks/use-promos";
+import { useSellerMe } from "@/hooks/use-auth";
 import { toast } from "@/components/ui/toast";
 import {
   AlertDialog,
@@ -26,6 +28,11 @@ export default function SellerPromos() {
   const createPromo = useCreatePromo();
   const updatePromo = useUpdatePromo();
   const deletePromo = useDeletePromo();
+
+  const { data: sellerData } = useSellerMe();
+  const seller = sellerData?.seller;
+  const isApproved = seller?.approved ?? false;
+  const isRevoked = !isApproved && !!seller?.revokedAt;
 
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -66,6 +73,12 @@ export default function SellerPromos() {
 
   return (
     <div className="mx-auto max-w-[1100px] space-y-5">
+      <SellerRevocationBanner
+        approved={seller?.approved ?? false}
+        revokedAt={seller?.revokedAt ?? null}
+        revokedReason={seller?.revokedReason ?? null}
+      />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-heading text-[1.7rem] font-semibold tracking-tight flex items-center gap-2">
@@ -74,17 +87,19 @@ export default function SellerPromos() {
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">Create codes for your products. Buyers enter them at checkout.</p>
         </div>
-        <Button
-          size="sm"
-          className="rounded-full"
-          onClick={() => {
-            setEditing(null);
-            setDialogOpen(true);
-          }}
-        >
-          <Plus data-icon="inline-start" />
-          New promo
-        </Button>
+        {isApproved && (
+          <Button
+            size="sm"
+            className="rounded-full"
+            onClick={() => {
+              setEditing(null);
+              setDialogOpen(true);
+            }}
+          >
+            <Plus data-icon="inline-start" />
+            New promo
+          </Button>
+        )}
       </div>
 
       <Card className="gap-0 overflow-hidden p-0 shadow-sm">
@@ -127,10 +142,20 @@ export default function SellerPromos() {
             </EmptyDescription>
             <EmptyContent>
               {promos.length === 0 ? (
-                <Button size="sm" className="rounded-full" onClick={() => setDialogOpen(true)}>
-                  <Plus data-icon="inline-start" />
-                  Create promo
-                </Button>
+                isApproved ? (
+                  <Button size="sm" className="rounded-full" onClick={() => setDialogOpen(true)}>
+                    <Plus data-icon="inline-start" />
+                    Create promo
+                  </Button>
+                ) : isRevoked ? (
+                  <p className="text-sm text-muted-foreground">
+                    Your seller account has been revoked. You cannot create promos.
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Your seller account is pending approval. You cannot create promos yet.
+                  </p>
+                )
               ) : (
                 <Button variant="outline" size="sm" className="rounded-full" onClick={() => setSearch("")}>
                   Clear search
@@ -182,39 +207,41 @@ export default function SellerPromos() {
                         </span>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Switch
-                            checked={promo.active}
-                            onCheckedChange={(checked) => {
-                              updatePromo.mutate(
-                                { id: promo.id, active: checked },
-                                {
-                                  onSuccess: () => toast.add({ type: "success", title: checked ? "Activated" : "Deactivated" }),
-                                  onError: (e) => toast.add({ type: "error", title: e.message }),
-                                }
-                              );
-                            }}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="size-7 rounded-full"
-                            onClick={() => {
-                              setEditing(promo);
-                              setDialogOpen(true);
-                            }}
-                          >
-                            <Pencil className="size-3.5" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="size-7 rounded-full text-destructive hover:bg-destructive/10"
-                            onClick={() => setDeleteTarget(promo)}
-                          >
-                            <Trash2 className="size-3.5" />
-                          </Button>
-                        </div>
+                        {isApproved ? (
+                          <div className="flex items-center gap-1">
+                            <Switch
+                              checked={promo.active}
+                              onCheckedChange={(checked) => {
+                                updatePromo.mutate(
+                                  { id: promo.id, active: checked },
+                                  {
+                                    onSuccess: () => toast.add({ type: "success", title: checked ? "Activated" : "Deactivated" }),
+                                    onError: (e) => toast.add({ type: "error", title: e.message }),
+                                  }
+                                );
+                              }}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="size-7 rounded-full"
+                              onClick={() => {
+                                setEditing(promo);
+                                setDialogOpen(true);
+                              }}
+                            >
+                              <Pencil className="size-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="size-7 rounded-full text-destructive hover:bg-destructive/10"
+                              onClick={() => setDeleteTarget(promo)}
+                            >
+                              <Trash2 className="size-3.5" />
+                            </Button>
+                          </div>
+                        ) : null}
                       </TableCell>
                     </TableRow>
                   );

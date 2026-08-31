@@ -133,3 +133,24 @@ read AGENTS.md, profile page
 - Update the checkout page to display the default address and phone number - as well as an option to change - directing user to their profile page.
 - On the profile page - order tab let have some border and shadow
 - fix an error when loading profile page
+
+40. Admin page
+    read /AGENTS.md, using react-router layout(admin-only), we create routes - Dashboard, users, Products - placeholder for now.
+
+- Intergrate the route with sidebar just like the seller layout.
+
+41. add a new route for seller in the admin sidebar - include filter(by approval status and search) and pagination, approve/reject. Use tanstack query for api calls. Use shadcn ui components but customize them to match the overall design of the application.
+
+- If it's revoking a seller, we should also revoke all their products. If a seller is revoked or not approved, their product should not be displayed on any page.
+- When revoking a seller, let a reason be provided for the revocation. The reason should be displayed on the seller's dashboard and profile page. The seller should not be able to create new products or edit existing products or delete products and create promo codes if they are revoked.
+- We should should be having another seller status - revoked(even though I roked a seller it display pending). The seller should be able to see the reason for the revocation on their dashboard and profile page. The seller should not have any CRUD permissions if they are revoked. Means admin cannot revoke a seller who is yet to be approved.
+  read /AGENTS.md - if a seller is revoked -
+  - Displaying rekoved reason to seller's pages
+  - seller should not be able to update,create,delete products or promo codes.
+  - if the seller is revoked, they should be able to visit their dashboard, on the user dropdown it shouldnt display "Seller account pending approval" as prevous the seller was approved - seller should be able to visit the page
+
+42. build admin all users page - include filter(by role and search) and pagination, ban. Use tanstack query for api calls. Use shadcn ui components but customize them to match the overall design of the application.
+
+43. build admin all products page - include filter(by category and search) and pagination, approve/reject. Use tanstack query for api calls. Use shadcn ui components but customize them to match the overall design of the application.
+
+44. Build admi dashboard.

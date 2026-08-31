@@ -1,5 +1,5 @@
 import { useParams, Link, data as routerData } from "react-router";
-import { Store, Star, Package, Calendar, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { Store, Star, Package, Calendar, CheckCircle2, Clock, AlertCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -122,10 +122,22 @@ export default function SellerProfile() {
                     @{seller.username}
                   </span>
                   <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold tracking-widest uppercase ring-1 ${seller.approved ? "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20" : "bg-amber-500/10 text-amber-700 ring-amber-500/20"}`}
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold tracking-widest uppercase ring-1 ${
+                      seller.approved
+                        ? "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20"
+                        : seller.revokedAt
+                        ? "bg-destructive/10 text-destructive ring-destructive/20"
+                        : "bg-amber-500/10 text-amber-700 ring-amber-500/20"
+                    }`}
                   >
-                    {seller.approved ? <CheckCircle2 className="size-3" /> : <Clock className="size-3" />}
-                    {seller.approved ? "Verified seller" : "Pending approval"}
+                    {seller.approved ? (
+                      <CheckCircle2 className="size-3" />
+                    ) : seller.revokedAt ? (
+                      <XCircle className="size-3" />
+                    ) : (
+                      <Clock className="size-3" />
+                    )}
+                    {seller.approved ? "Verified seller" : seller.revokedAt ? "Revoked" : "Pending approval"}
                   </span>
                 </div>
                 {seller.description && <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted-foreground">{seller.description}</p>}
@@ -151,6 +163,25 @@ export default function SellerProfile() {
             </div>
           </CardContent>
         </Card>
+
+        {!seller.approved && seller.revokedAt && (
+          <div
+            className="mt-5 flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4"
+            role="status"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive ring-1 ring-destructive/20">
+              <XCircle className="size-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <h4 className="font-heading text-sm font-semibold tracking-tight text-destructive">
+                This store is currently unavailable
+              </h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                The seller&apos;s products are not available for purchase at this time.
+              </p>
+            </div>
+          </div>
+        )}
 
         <Tabs defaultValue="products" className="mt-6">
           <TabsList className="rounded-full bg-muted p-1">

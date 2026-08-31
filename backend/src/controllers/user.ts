@@ -10,20 +10,18 @@ export async function getProfile(req: Request, res: Response) {
       where: { id: userId },
       include: {
         addresses: {
-          where: { isDefault: true },
-          take: 1,
+          orderBy: { isDefault: "desc" },
         },
         phones: {
-          where: { isDefault: true },
-          take: 1,
+          orderBy: { isDefault: "desc" },
         },
       },
     });
 
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    const defaultAddress = user.addresses[0] || null;
-    const defaultPhone = user.phones[0] || null;
+    const defaultAddress = user.addresses.find((a) => a.isDefault) || user.addresses[0] || null;
+    const defaultPhone = user.phones.find((p) => p.isDefault) || user.phones[0] || null;
 
     return res.json({
       id: user.id,
@@ -47,38 +45,14 @@ export async function updateProfile(req: Request, res: Response) {
   try {
     const session = (req as any).session;
     const userId = session.user.id as string;
-    const { address, phone } = req.body as { address: string; phone: string };
+    const { phone } = req.body as { phone: string };
 
-    if (!address || !phone) {
-      return res.status(400).json({ error: "Address and phone number are required" });
+    if (!phone) {
+      return res.status(400).json({ error: "Phone number is required" });
     }
 
     if (phone.trim().length < 7) {
       return res.status(400).json({ error: "Phone number must be at least 7 characters" });
-    }
-
-    // Update or create default address
-    let defaultAddress = await prisma.address.findFirst({
-      where: { userId, isDefault: true },
-    });
-
-    if (defaultAddress) {
-      await prisma.address.update({
-        where: { id: defaultAddress.id },
-        data: { street: address, city: "", zip: "", updatedAt: new Date() },
-      });
-    } else {
-      await prisma.address.create({
-        data: {
-          userId,
-          label: "Home",
-          street: address,
-          city: "",
-          zip: "",
-          country: "United States",
-          isDefault: true,
-        },
-      });
     }
 
     // Update or create default phone
@@ -106,18 +80,16 @@ export async function updateProfile(req: Request, res: Response) {
       where: { id: userId },
       include: {
         addresses: {
-          where: { isDefault: true },
-          take: 1,
+          orderBy: { isDefault: "desc" },
         },
         phones: {
-          where: { isDefault: true },
-          take: 1,
+          orderBy: { isDefault: "desc" },
         },
       },
     });
 
-    const defaultAddressResult = user?.addresses[0] || null;
-    const defaultPhoneResult = user?.phones[0] || null;
+    const defaultAddress = user?.addresses.find((a) => a.isDefault) || user?.addresses[0] || null;
+    const defaultPhoneResult = user?.phones.find((p) => p.isDefault) || user?.phones[0] || null;
 
     return res.json({
       id: user?.id,
@@ -126,8 +98,10 @@ export async function updateProfile(req: Request, res: Response) {
       image: user?.image,
       role: user?.role,
       banned: user?.banned,
-      defaultAddress: defaultAddressResult,
+      defaultAddress,
       defaultPhone: defaultPhoneResult,
+      addresses: user?.addresses ?? [],
+      phones: user?.phones ?? [],
     });
   } catch (error) {
     console.error("Update user profile error", error);

@@ -134,17 +134,15 @@ export function ProductCard({ product, className }: ProductCardProps) {
           {product.colors.length > 4 && (
             <span className="text-[11px] text-muted-foreground">+{product.colors.length - 4}</span>
           )}
-          {product.seller?.name && (
-            <>
-              {product.seller.username ? (
-                <Link to={`/${product.seller.username}`} className="ml-auto truncate text-[11px] tracking-wide text-muted-foreground hover:text-foreground hover:underline">
-                  {product.seller.name}
-                </Link>
-              ) : (
-                <span className="ml-auto truncate text-[11px] tracking-wide text-muted-foreground">{product.seller.name}</span>
-              )}
-            </>
-          )}
+          {product.seller ? (
+            product.seller.username ? (
+              <Link to={`/${product.seller.username}`} className="ml-auto truncate text-[11px] tracking-wide text-muted-foreground hover:text-foreground hover:underline">
+                {product.seller.name}
+              </Link>
+            ) : (
+              <span className="ml-auto truncate text-[11px] tracking-wide text-muted-foreground">{product.seller.name}</span>
+            )
+          ) : null}
         </div>
 
         <h3 className="line-clamp-2 min-h-[2.6rem] text-sm font-medium leading-snug text-foreground">
@@ -160,9 +158,9 @@ export function ProductCard({ product, className }: ProductCardProps) {
             ))}
           </span>
           <span className="text-[11px] text-muted-foreground">
-            {product.totalReviews > 0 ? `${product.avgRating.toFixed(1)} (${product.totalReviews})` : "No reviews"}
+            {(product.totalReviews ?? 0) > 0 ? `${(product.avgRating ?? 0).toFixed(1)} (${product.totalReviews})` : "No reviews"}
           </span>
-          {product.unitsSold > 0 && <span className="ml-auto text-[11px] text-muted-foreground">{product.unitsSold} sold</span>}
+          {(product.unitsSold ?? 0) > 0 && <span className="ml-auto text-[11px] text-muted-foreground">{product.unitsSold} sold</span>}
         </div>
 
         <div className="mt-auto flex items-baseline gap-2">

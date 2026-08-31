@@ -27,6 +27,12 @@ export default [
     route("seller/orders", "routes/seller/orders.tsx"),
     route("seller/settings", "routes/seller/settings.tsx"),
   ]),
+  layout("routes/admin/layout.tsx", [
+    route("admin", "routes/admin/index.tsx"),
+    route("admin/sellers", "routes/admin/sellers.tsx"),
+    route("admin/users", "routes/admin/users.tsx"),
+    route("admin/products", "routes/admin/products.tsx"),
+  ]),
   layout("routes/user.tsx", [
     route("profile", "routes/profile.tsx"),
     route("settings", "routes/settings.tsx"),

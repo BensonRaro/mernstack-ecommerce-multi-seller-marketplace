@@ -32,7 +32,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Empty, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
+import {
+  Empty,
+  EmptyMedia,
+  EmptyTitle,
+  EmptyDescription,
+  EmptyContent,
+} from "@/components/ui/empty";
 import {
   Dialog,
   DialogTrigger,
@@ -42,6 +48,16 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import {
   Table,
   TableHeader,
@@ -53,7 +69,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useUserProfile, useUpdateUserProfile, useAddresses, usePhones, useCreateAddress, useUpdateAddress, useDeleteAddress, useSetDefaultAddress, useCreatePhone, useUpdatePhone, useDeletePhone, useSetDefaultPhone, type Address as AddressType, type Phone as PhoneType } from "@/hooks/use-user-profile";
+import {
+  useUserProfile,
+  useUpdateUserProfile,
+  useAddresses,
+  usePhones,
+  useCreateAddress,
+  useUpdateAddress,
+  useDeleteAddress,
+  useSetDefaultAddress,
+  useCreatePhone,
+  useUpdatePhone,
+  useDeletePhone,
+  useSetDefaultPhone,
+  type Address as AddressType,
+  type Phone as PhoneType,
+} from "@/hooks/use-user-profile";
 import { useSellerOrders } from "@/hooks/use-orders";
 import { useMyOrders } from "@/hooks/use-orders";
 import { useUserReviews } from "@/hooks/use-reviews";
@@ -76,7 +107,13 @@ interface OrderItem {
   quantity: number;
   price: number;
   sellerId: string;
-  product: { id: string; name: string; images: string[]; price: number; discount: number };
+  product: {
+    id: string;
+    name: string;
+    images: string[];
+    price: number;
+    discount: number;
+  };
 }
 
 interface Order {
@@ -94,7 +131,12 @@ interface Order {
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
-  user?: { id: string; name: string | null; email: string; image: string | null };
+  user?: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
   _allItemsCount?: number;
 }
 
@@ -137,7 +179,10 @@ function StarRating({ rating }: { rating: number }) {
   return (
     <span className="inline-flex gap-0.5">
       {[1, 2, 3, 4, 5].map((i) => (
-        <Star key={i} className={`size-4 ${i <= Math.round(rating) ? "fill-primary text-primary" : "text-muted-foreground/20"}`} />
+        <Star
+          key={i}
+          className={`size-4 ${i <= Math.round(rating) ? "fill-primary text-primary" : "text-muted-foreground/20"}`}
+        />
       ))}
     </span>
   );
@@ -146,12 +191,21 @@ function StarRating({ rating }: { rating: number }) {
 export default function Profile() {
   const { data: profile, isLoading, isError, error } = useUserProfile();
   const { mutateAsync: updateProfile, isPending } = useUpdateUserProfile();
-  const { data: sellerOrders, isLoading: sellerLoading, refetch: refetchSellerOrders } = useSellerOrders();
-  const { data: myOrders, isLoading: myLoading, refetch: refetchMyOrders } = useMyOrders();
+  const {
+    data: sellerOrders,
+    isLoading: sellerLoading,
+    refetch: refetchSellerOrders,
+  } = useSellerOrders();
+  const {
+    data: myOrders,
+    isLoading: myLoading,
+    refetch: refetchMyOrders,
+  } = useMyOrders();
   const { data: reviewsData, isLoading: reviewsLoading } = useUserReviews();
   const { mutate: createReview, isPending: reviewPending } = useCreateReview();
-  const { mutate: deleteReview, isPending: deleteReviewPending } = useDeleteReview();
-  
+  const { mutate: deleteReview, isPending: deleteReviewPending } =
+    useDeleteReview();
+
   // Address/Phone CRUD hooks
   const { data: addressesData, isLoading: addressesLoading } = useAddresses();
   const { data: phonesData, isLoading: phonesLoading } = usePhones();
@@ -166,7 +220,11 @@ export default function Profile() {
 
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [phoneDialogOpen, setPhoneDialogOpen] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<AddressType | null>(null);
+  const [deleteAddressTarget, setDeleteAddressTarget] = useState<AddressType | null>(null);
+  const [deletePhoneTarget, setDeletePhoneTarget] = useState<PhoneType | null>(null);
+  const [editingAddress, setEditingAddress] = useState<AddressType | null>(
+    null,
+  );
   const [editingPhone, setEditingPhone] = useState<PhoneType | null>(null);
   const [addressFormData, setAddressFormData] = useState<{
     label: string;
@@ -198,7 +256,14 @@ export default function Profile() {
 
   const openAddAddress = () => {
     setEditingAddress(null);
-    setAddressFormData({ label: "Home", street: "", city: "", zip: "", country: "United States", isDefault: addresses.length === 0 });
+    setAddressFormData({
+      label: "Home",
+      street: "",
+      city: "",
+      zip: "",
+      country: "United States",
+      isDefault: addresses.length === 0,
+    });
     setAddressDialogOpen(true);
   };
 
@@ -217,7 +282,11 @@ export default function Profile() {
 
   const openAddPhone = () => {
     setEditingPhone(null);
-    setPhoneFormData({ label: "Mobile", number: "", isDefault: phones.length === 0 });
+    setPhoneFormData({
+      label: "Mobile",
+      number: "",
+      isDefault: phones.length === 0,
+    });
     setPhoneDialogOpen(true);
   };
 
@@ -235,7 +304,10 @@ export default function Profile() {
     e.preventDefault();
     try {
       if (editingAddress) {
-        await updateAddress.mutateAsync({ id: editingAddress.id, ...addressFormData });
+        await updateAddress.mutateAsync({
+          id: editingAddress.id,
+          ...addressFormData,
+        });
         toast.add({ type: "success", title: "Address updated" });
       } else {
         await createAddress.mutateAsync(addressFormData);
@@ -243,7 +315,12 @@ export default function Profile() {
       }
       setAddressDialogOpen(false);
     } catch (e) {
-      toast.add({ type: "error", title: editingAddress ? "Failed to update address" : "Failed to add address" });
+      toast.add({
+        type: "error",
+        title: editingAddress
+          ? "Failed to update address"
+          : "Failed to add address",
+      });
     }
   };
 
@@ -251,7 +328,10 @@ export default function Profile() {
     e.preventDefault();
     try {
       if (editingPhone) {
-        await updatePhone.mutateAsync({ id: editingPhone.id, ...phoneFormData });
+        await updatePhone.mutateAsync({
+          id: editingPhone.id,
+          ...phoneFormData,
+        });
         toast.add({ type: "success", title: "Phone updated" });
       } else {
         await createPhone.mutateAsync(phoneFormData);
@@ -259,25 +339,30 @@ export default function Profile() {
       }
       setPhoneDialogOpen(false);
     } catch (e) {
-      toast.add({ type: "error", title: editingPhone ? "Failed to update phone" : "Failed to add phone" });
+      toast.add({
+        type: "error",
+        title: editingPhone ? "Failed to update phone" : "Failed to add phone",
+      });
     }
   };
 
-  const handleDeleteAddress = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this address?")) return;
+  const handleDeleteAddress = async () => {
+    if (!deleteAddressTarget) return;
     try {
-      await deleteAddress.mutateAsync(id);
+      await deleteAddress.mutateAsync(deleteAddressTarget.id);
       toast.add({ type: "success", title: "Address deleted" });
+      setDeleteAddressTarget(null);
     } catch (e) {
       toast.add({ type: "error", title: "Failed to delete address" });
     }
   };
 
-  const handleDeletePhone = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this phone number?")) return;
+  const handleDeletePhone = async () => {
+    if (!deletePhoneTarget) return;
     try {
-      await deletePhone.mutateAsync(id);
+      await deletePhone.mutateAsync(deletePhoneTarget.id);
       toast.add({ type: "success", title: "Phone deleted" });
+      setDeletePhoneTarget(null);
     } catch (e) {
       toast.add({ type: "error", title: "Failed to delete phone" });
     }
@@ -301,9 +386,10 @@ export default function Profile() {
     }
   };
 
-  const orders = profile?.role === "seller"
-    ? (sellerOrders?.orders ?? [])
-    : (myOrders?.orders ?? []);
+  const orders =
+    profile?.role === "seller"
+      ? (sellerOrders?.orders ?? [])
+      : (myOrders?.orders ?? []);
   const reviews = (reviewsData?.reviews ?? []) as Review[];
 
   if (!profile) {
@@ -332,7 +418,9 @@ export default function Profile() {
               <AlertCircle />
             </EmptyMedia>
             <EmptyTitle>Error loading profile</EmptyTitle>
-            <EmptyDescription>{(error as Error)?.message || "Failed to load profile"}</EmptyDescription>
+            <EmptyDescription>
+              {(error as Error)?.message || "Failed to load profile"}
+            </EmptyDescription>
             <Button size="sm" className="rounded-full" render={<Link to="/" />}>
               Back to home
             </Button>
@@ -345,27 +433,38 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-6xl py-6 px-4 md:px-0">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="font-heading text-2xl font-bold tracking-tight">My Profile</h1>
+          <h1 className="font-heading text-2xl font-bold tracking-tight">
+            My Profile
+          </h1>
         </div>
 
         <Card className="overflow-hidden">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base normal-case tracking-tight">
               <Avatar className="size-10">
-                <AvatarImage src={profile.image || undefined} alt={profile.name} />
-                <AvatarFallback className="text-lg font-semibold bg-muted">{profile.name.charAt(0).toUpperCase()}</AvatarFallback>
+                <AvatarImage
+                  src={profile.image || undefined}
+                  alt={profile.name}
+                />
+                <AvatarFallback className="text-lg font-semibold bg-muted">
+                  {profile.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <span className="font-semibold">{profile.name}</span>
-              <span className="text-xs text-muted-foreground">{profile.email}</span>
+              <span className="text-xs text-muted-foreground">
+                {profile.email}
+              </span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             {/* Addresses Section */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-heading text-sm font-semibold tracking-wider uppercase text-muted-foreground">Addresses</h2>
+                <h2 className="font-heading text-sm font-semibold tracking-wider uppercase text-muted-foreground">
+                  Addresses
+                </h2>
                 <Button variant="outline" size="sm" onClick={openAddAddress}>
                   <Plus className="size-4 mr-2" /> Add Address
                 </Button>
@@ -373,45 +472,89 @@ export default function Profile() {
               {addressesLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-20 rounded-xl border border-border bg-card" />
+                    <Skeleton
+                      key={i}
+                      className="h-20 rounded-xl border border-border bg-card"
+                    />
                   ))}
                 </div>
               ) : addresses.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-8 text-center">
                   <MapPin className="size-12 mx-auto text-muted-foreground/50" />
-                  <p className="mt-3 text-sm text-muted-foreground">No addresses saved</p>
-                  <Button variant="outline" size="sm" className="mt-3" onClick={openAddAddress}>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    No addresses saved
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={openAddAddress}
+                  >
                     <Plus className="size-4 mr-2" /> Add your first address
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {addresses.map((addr) => (
-                    <div key={addr.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+                    <div
+                      key={addr.id}
+                      className="flex items-center justify-between rounded-xl border border-border bg-card p-4"
+                    >
                       <div className="flex items-center gap-4">
-                        <span className={cn("flex size-10 items-center justify-center rounded-full", addr.isDefault ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+                        <span
+                          className={cn(
+                            "flex size-10 items-center justify-center rounded-full",
+                            addr.isDefault
+                              ? "bg-primary/10 text-primary"
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
                           <MapPin className="size-5" />
                         </span>
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{addr.label}</span>
-                            {addr.isDefault && <Badge variant="default" className="ml-2">Default</Badge>}
+                            {addr.isDefault && (
+                              <Badge variant="default" className="ml-2">
+                                Default
+                              </Badge>
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground">{addr.street}</p>
-                          <p className="text-xs text-muted-foreground">{addr.city} · {addr.zip} · {addr.country}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {addr.street}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {addr.city} · {addr.zip} · {addr.country}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {!addr.isDefault && (
-                          <Button variant="ghost" size="icon-sm" onClick={() => handleSetDefaultAddress(addr.id)} title="Set as default">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => handleSetDefaultAddress(addr.id)}
+                            title="Set as default"
+                          >
                             <CheckCircle2 className="size-4" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="icon-sm" onClick={() => openEditAddress(addr)} title="Edit">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => openEditAddress(addr)}
+                          title="Edit"
+                        >
                           <Edit className="size-4" />
                         </Button>
                         {addresses.length > 1 && (
-                          <Button variant="ghost" size="icon-sm" onClick={() => handleDeleteAddress(addr.id)} title="Delete" className="text-destructive hover:text-destructive">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setDeleteAddressTarget(addr)}
+                            title="Delete"
+                            className="text-destructive hover:text-destructive"
+                          >
                             <Trash2 className="size-4" />
                           </Button>
                         )}
@@ -427,7 +570,9 @@ export default function Profile() {
             {/* Phones Section */}
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-heading text-sm font-semibold tracking-wider uppercase text-muted-foreground">Phone Numbers</h2>
+                <h2 className="font-heading text-sm font-semibold tracking-wider uppercase text-muted-foreground">
+                  Phone Numbers
+                </h2>
                 <Button variant="outline" size="sm" onClick={openAddPhone}>
                   <Plus className="size-4 mr-2" /> Add Phone
                 </Button>
@@ -435,44 +580,86 @@ export default function Profile() {
               {phonesLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-20 rounded-xl border border-border bg-card" />
+                    <Skeleton
+                      key={i}
+                      className="h-20 rounded-xl border border-border bg-card"
+                    />
                   ))}
                 </div>
               ) : phones.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-8 text-center">
                   <Phone className="size-12 mx-auto text-muted-foreground/50" />
-                  <p className="mt-3 text-sm text-muted-foreground">No phone numbers saved</p>
-                  <Button variant="outline" size="sm" className="mt-3" onClick={openAddPhone}>
+                  <p className="mt-3 text-sm text-muted-foreground">
+                    No phone numbers saved
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={openAddPhone}
+                  >
                     <Plus className="size-4 mr-2" /> Add your first phone
                   </Button>
                 </div>
               ) : (
                 <div className="space-y-3">
                   {phones.map((ph) => (
-                    <div key={ph.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4">
+                    <div
+                      key={ph.id}
+                      className="flex items-center justify-between rounded-xl border border-border bg-card p-4"
+                    >
                       <div className="flex items-center gap-4">
-                        <span className={cn("flex size-10 items-center justify-center rounded-full", ph.isDefault ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground")}>
+                        <span
+                          className={cn(
+                            "flex size-10 items-center justify-center rounded-full",
+                            ph.isDefault
+                              ? "bg-primary/10 text-primary"
+                              : "bg-muted text-muted-foreground",
+                          )}
+                        >
                           <Phone className="size-5" />
                         </span>
                         <div>
                           <div className="flex items-center gap-2">
                             <span className="font-medium">{ph.label}</span>
-                            {ph.isDefault && <Badge variant="default" className="ml-2">Default</Badge>}
+                            {ph.isDefault && (
+                              <Badge variant="default" className="ml-2">
+                                Default
+                              </Badge>
+                            )}
                           </div>
-                          <p className="text-sm font-medium font-mono">{ph.number}</p>
+                          <p className="text-sm font-medium font-mono">
+                            {ph.number}
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         {!ph.isDefault && (
-                          <Button variant="ghost" size="icon-sm" onClick={() => handleSetDefaultPhone(ph.id)} title="Set as default">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => handleSetDefaultPhone(ph.id)}
+                            title="Set as default"
+                          >
                             <CheckCircle2 className="size-4" />
                           </Button>
                         )}
-                        <Button variant="ghost" size="icon-sm" onClick={() => openEditPhone(ph)} title="Edit">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => openEditPhone(ph)}
+                          title="Edit"
+                        >
                           <Edit className="size-4" />
                         </Button>
                         {phones.length > 1 && (
-                          <Button variant="ghost" size="icon-sm" onClick={() => handleDeletePhone(ph.id)} title="Delete" className="text-destructive hover:text-destructive">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setDeletePhoneTarget(ph)}
+                            title="Delete"
+                            className="text-destructive hover:text-destructive"
+                          >
                             <Trash2 className="size-4" />
                           </Button>
                         )}
@@ -488,30 +675,45 @@ export default function Profile() {
         {/* Tabs for Orders and Reviews */}
         <Tabs defaultValue="orders" className="mt-8">
           <TabsList className="rounded-full bg-muted p-1">
-            <TabsTrigger value="orders" className="rounded-full data-[state=active]:bg-card">
+            <TabsTrigger
+              value="orders"
+              className="rounded-full data-[state=active]:bg-card"
+            >
               Orders
             </TabsTrigger>
-            <TabsTrigger value="reviews" className="rounded-full data-[state=active]:bg-card">
+            <TabsTrigger
+              value="reviews"
+              className="rounded-full data-[state=active]:bg-card"
+            >
               Reviews {reviews.length}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="mt-6">
-            <OrdersTable
-              orders={orders}
-              isLoading={profile?.role === "seller" ? sellerLoading : myLoading}
-              isError={isError}
-              error={error}
-              refetch={profile?.role === "seller" ? refetchSellerOrders : refetchMyOrders}
-              role={profile.role}
-            />
+            <div className="rounded-2xl border border-border bg-card shadow-sm">
+              <OrdersTable
+                orders={orders}
+                isLoading={profile?.role === "seller" ? sellerLoading : myLoading}
+                isError={isError}
+                error={error}
+                refetch={
+                  profile?.role === "seller"
+                    ? refetchSellerOrders
+                    : refetchMyOrders
+                }
+                role={profile.role}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="reviews" className="mt-6">
             {reviewsLoading ? (
               <div className="space-y-4">
                 {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24 rounded-xl border border-border bg-card" />
+                  <Skeleton
+                    key={i}
+                    className="h-24 rounded-xl border border-border bg-card"
+                  />
                 ))}
               </div>
             ) : reviews.length === 0 ? (
@@ -520,27 +722,52 @@ export default function Profile() {
                   <Star className="size-6" />
                 </EmptyMedia>
                 <EmptyTitle>No reviews yet</EmptyTitle>
-                <EmptyDescription>When you review a product, it'll appear here.</EmptyDescription>
+                <EmptyDescription>
+                  When you review a product, it'll appear here.
+                </EmptyDescription>
               </Empty>
             ) : (
               <div className="space-y-4">
                 {reviews.map((review) => (
-                  <div key={review.id} className="rounded-xl border border-border bg-card p-4">
+                  <div
+                    key={review.id}
+                    className="rounded-xl border border-border bg-card p-4"
+                  >
                     <div className="flex items-start gap-3">
                       <Avatar className="size-8 flex-shrink-0">
-                        <AvatarImage src={review.user.image || undefined} alt={review.user.name || ""} />
-                        <AvatarFallback className="text-xs">{review.user.name?.charAt(0) || "U"}</AvatarFallback>
+                        <AvatarImage
+                          src={review.user.image || undefined}
+                          alt={review.user.name || ""}
+                        />
+                        <AvatarFallback className="text-xs">
+                          {review.user.name?.charAt(0) || "U"}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium">{review.user.name || "Anonymous"}</p>
-                          <span className="text-xs text-muted-foreground">{new Date(review.createdAt).toLocaleDateString()}</span>
+                          <p className="text-sm font-medium">
+                            {review.user.name || "Anonymous"}
+                          </p>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
                         <StarRating rating={review.rating} />
-                        <p className="mt-2 text-sm leading-relaxed">{review.comment}</p>
-                        {review.product?.images[0] && <img src={review.product.images[0]} alt={review.product.name} className="size-8 rounded-lg object-cover mt-2" />}
+                        <p className="mt-2 text-sm leading-relaxed">
+                          {review.comment}
+                        </p>
+                        {review.product?.images[0] && (
+                          <img
+                            src={review.product.images[0]}
+                            alt={review.product.name}
+                            className="size-8 rounded-lg object-cover mt-2"
+                          />
+                        )}
                         {review.product && (
-                          <Link to={`/product/${review.product.id}`} className="text-xs text-muted-foreground hover:text-foreground hover:underline mt-2">
+                          <Link
+                            to={`/product/${review.product.id}`}
+                            className="text-xs text-muted-foreground hover:text-foreground hover:underline mt-2"
+                          >
                             {review.product.name}
                           </Link>
                         )}
@@ -557,7 +784,9 @@ export default function Profile() {
         <Dialog open={addressDialogOpen} onOpenChange={setAddressDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingAddress ? "Edit Address" : "Add Address"}</DialogTitle>
+              <DialogTitle>
+                {editingAddress ? "Edit Address" : "Add Address"}
+              </DialogTitle>
               <DialogDescription>Enter your delivery address</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleAddressSave}>
@@ -567,7 +796,12 @@ export default function Profile() {
                   <Input
                     id="label"
                     value={addressFormData.label}
-                    onChange={(e) => setAddressFormData((prev) => ({ ...prev, label: e.target.value }))}
+                    onChange={(e) =>
+                      setAddressFormData((prev) => ({
+                        ...prev,
+                        label: e.target.value,
+                      }))
+                    }
                     required
                     placeholder="Home, Office, etc."
                   />
@@ -577,7 +811,12 @@ export default function Profile() {
                   <Input
                     id="street"
                     value={addressFormData.street}
-                    onChange={(e) => setAddressFormData((prev) => ({ ...prev, street: e.target.value }))}
+                    onChange={(e) =>
+                      setAddressFormData((prev) => ({
+                        ...prev,
+                        street: e.target.value,
+                      }))
+                    }
                     required
                     placeholder="123 Main Street"
                   />
@@ -587,7 +826,12 @@ export default function Profile() {
                   <Input
                     id="city"
                     value={addressFormData.city}
-                    onChange={(e) => setAddressFormData((prev) => ({ ...prev, city: e.target.value }))}
+                    onChange={(e) =>
+                      setAddressFormData((prev) => ({
+                        ...prev,
+                        city: e.target.value,
+                      }))
+                    }
                     placeholder="New York"
                   />
                 </div>
@@ -597,7 +841,12 @@ export default function Profile() {
                     <Input
                       id="zip"
                       value={addressFormData.zip}
-                      onChange={(e) => setAddressFormData((prev) => ({ ...prev, zip: e.target.value }))}
+                      onChange={(e) =>
+                        setAddressFormData((prev) => ({
+                          ...prev,
+                          zip: e.target.value,
+                        }))
+                      }
                       placeholder="10001"
                     />
                   </div>
@@ -606,7 +855,12 @@ export default function Profile() {
                     <Input
                       id="country"
                       value={addressFormData.country}
-                      onChange={(e) => setAddressFormData((prev) => ({ ...prev, country: e.target.value }))}
+                      onChange={(e) =>
+                        setAddressFormData((prev) => ({
+                          ...prev,
+                          country: e.target.value,
+                        }))
+                      }
                       placeholder="United States"
                     />
                   </div>
@@ -616,17 +870,35 @@ export default function Profile() {
                     type="checkbox"
                     id="isDefault"
                     checked={addressFormData.isDefault}
-                    onChange={(e) => setAddressFormData((prev) => ({ ...prev, isDefault: e.target.checked }))}
+                    onChange={(e) =>
+                      setAddressFormData((prev) => ({
+                        ...prev,
+                        isDefault: e.target.checked,
+                      }))
+                    }
                     className="h-4 w-4 rounded border-border"
                   />
-                  <Label htmlFor="isDefault" className="text-sm">Set as default address</Label>
+                  <Label htmlFor="isDefault" className="text-sm">
+                    Set as default address
+                  </Label>
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={createAddress.isPending || updateAddress.isPending}>
-                  {(createAddress.isPending || updateAddress.isPending) ? <Loader2 className="size-4 animate-spin" /> : "Save"}
+                <Button
+                  type="submit"
+                  disabled={createAddress.isPending || updateAddress.isPending}
+                >
+                  {createAddress.isPending || updateAddress.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    "Save"
+                  )}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setAddressDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAddressDialogOpen(false)}
+                >
                   Cancel
                 </Button>
               </DialogFooter>
@@ -638,7 +910,9 @@ export default function Profile() {
         <Dialog open={phoneDialogOpen} onOpenChange={setPhoneDialogOpen}>
           <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>{editingPhone ? "Edit Phone" : "Add Phone"}</DialogTitle>
+              <DialogTitle>
+                {editingPhone ? "Edit Phone" : "Add Phone"}
+              </DialogTitle>
               <DialogDescription>Enter your phone number</DialogDescription>
             </DialogHeader>
             <form onSubmit={handlePhoneSave}>
@@ -648,7 +922,12 @@ export default function Profile() {
                   <Input
                     id="label"
                     value={phoneFormData.label}
-                    onChange={(e) => setPhoneFormData((prev) => ({ ...prev, label: e.target.value }))}
+                    onChange={(e) =>
+                      setPhoneFormData((prev) => ({
+                        ...prev,
+                        label: e.target.value,
+                      }))
+                    }
                     required
                     placeholder="Mobile, Work, etc."
                   />
@@ -659,7 +938,12 @@ export default function Profile() {
                     id="number"
                     type="tel"
                     value={phoneFormData.number}
-                    onChange={(e) => setPhoneFormData((prev) => ({ ...prev, number: e.target.value }))}
+                    onChange={(e) =>
+                      setPhoneFormData((prev) => ({
+                        ...prev,
+                        number: e.target.value,
+                      }))
+                    }
                     required
                     minLength={7}
                     placeholder="+1 (555) 014-2832"
@@ -670,23 +954,147 @@ export default function Profile() {
                     type="checkbox"
                     id="isDefault"
                     checked={phoneFormData.isDefault}
-                    onChange={(e) => setPhoneFormData((prev) => ({ ...prev, isDefault: e.target.checked }))}
+                    onChange={(e) =>
+                      setPhoneFormData((prev) => ({
+                        ...prev,
+                        isDefault: e.target.checked,
+                      }))
+                    }
                     className="h-4 w-4 rounded border-border"
                   />
-                  <Label htmlFor="isDefault" className="text-sm">Set as default phone</Label>
+                  <Label htmlFor="isDefault" className="text-sm">
+                    Set as default phone
+                  </Label>
                 </div>
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={createPhone.isPending || updatePhone.isPending}>
-                  {(createPhone.isPending || updatePhone.isPending) ? <Loader2 className="size-4 animate-spin" /> : "Save"}
+                <Button
+                  type="submit"
+                  disabled={createPhone.isPending || updatePhone.isPending}
+                >
+                  {createPhone.isPending || updatePhone.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    "Save"
+                  )}
                 </Button>
-                <Button type="button" variant="outline" onClick={() => setPhoneDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setPhoneDialogOpen(false)}
+                >
                   Cancel
                 </Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Address Confirmation */}
+        <AlertDialog
+          open={!!deleteAddressTarget}
+          onOpenChange={(o) => !o && setDeleteAddressTarget(null)}
+        >
+          <AlertDialogContent
+            size="default"
+            className="max-w-[420px] gap-5 rounded-2xl border border-border bg-card p-6 shadow-xl sm:rounded-2xl"
+          >
+            <AlertDialogHeader className="gap-4">
+              <div className="flex size-11 items-center justify-center rounded-full bg-destructive/10 text-destructive ring-1 ring-destructive/20">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="space-y-2 text-left">
+                <AlertDialogTitle className="font-heading text-xl normal-case tracking-tight">
+                  Delete address?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-left leading-relaxed">
+                  {deleteAddressTarget ? (
+                    <>
+                      This will permanently delete the{" "}
+                      <span className="font-medium text-foreground">
+                        "{deleteAddressTarget.label}"
+                      </span>{" "}
+                      address. This action cannot be undone.
+                    </>
+                  ) : (
+                    "This action cannot be undone."
+                  )}
+                </AlertDialogDescription>
+              </div>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 sm:gap-2">
+              <AlertDialogCancel
+                disabled={deleteAddress.isPending}
+                className="rounded-full border-border bg-card text-xs tracking-widest uppercase"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDeleteAddress();
+                }}
+                disabled={deleteAddress.isPending}
+                className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs tracking-widest uppercase disabled:opacity-60"
+              >
+                {deleteAddress.isPending ? "Deleting…" : "Delete address"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Delete Phone Confirmation */}
+        <AlertDialog
+          open={!!deletePhoneTarget}
+          onOpenChange={(o) => !o && setDeletePhoneTarget(null)}
+        >
+          <AlertDialogContent
+            size="default"
+            className="max-w-[420px] gap-5 rounded-2xl border border-border bg-card p-6 shadow-xl sm:rounded-2xl"
+          >
+            <AlertDialogHeader className="gap-4">
+              <div className="flex size-11 items-center justify-center rounded-full bg-destructive/10 text-destructive ring-1 ring-destructive/20">
+                <Trash2 className="size-5" />
+              </div>
+              <div className="space-y-2 text-left">
+                <AlertDialogTitle className="font-heading text-xl normal-case tracking-tight">
+                  Delete phone?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-left leading-relaxed">
+                  {deletePhoneTarget ? (
+                    <>
+                      This will permanently delete the{" "}
+                      <span className="font-medium text-foreground">
+                        "{deletePhoneTarget.label}"
+                      </span>{" "}
+                      phone number. This action cannot be undone.
+                    </>
+                  ) : (
+                    "This action cannot be undone."
+                  )}
+                </AlertDialogDescription>
+              </div>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 sm:gap-2">
+              <AlertDialogCancel
+                disabled={deletePhone.isPending}
+                className="rounded-full border-border bg-card text-xs tracking-widest uppercase"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDeletePhone();
+                }}
+                disabled={deletePhone.isPending}
+                className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs tracking-widest uppercase disabled:opacity-60"
+              >
+                {deletePhone.isPending ? "Deleting…" : "Delete phone"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
@@ -743,8 +1151,15 @@ function OrdersTable({
           <AlertCircle className="size-5" />
         </span>
         <p className="text-sm font-medium">Failed to load orders</p>
-        <p className="max-w-sm text-sm text-muted-foreground">{(error as Error)?.message || "Something went wrong."}</p>
-        <Button variant="outline" size="sm" onClick={refetch} className="rounded-full">
+        <p className="max-w-sm text-sm text-muted-foreground">
+          {(error as Error)?.message || "Something went wrong."}
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={refetch}
+          className="rounded-full"
+        >
           Retry
         </Button>
       </div>
@@ -758,7 +1173,11 @@ function OrdersTable({
           <ShoppingBag />
         </EmptyMedia>
         <EmptyTitle>No orders yet</EmptyTitle>
-        <EmptyDescription>{role === "seller" ? "Orders will appear here once customers purchase your products." : "Place your first order to see it here."}</EmptyDescription>
+        <EmptyDescription>
+          {role === "seller"
+            ? "Orders will appear here once customers purchase your products."
+            : "Place your first order to see it here."}
+        </EmptyDescription>
       </Empty>
     );
   }
@@ -783,24 +1202,46 @@ function OrdersTable({
             const isExpanded = expanded.has(order.id);
             return (
               <>
-                <TableRow key={order.id} className="group" data-expanded={isExpanded ? "" : undefined}>
+                <TableRow
+                  key={order.id}
+                  className="group"
+                  data-expanded={isExpanded ? "" : undefined}
+                >
                   <TableCell className="w-8">
                     <button
                       type="button"
-                      aria-label={isExpanded ? "Collapse order" : "Expand order"}
+                      aria-label={
+                        isExpanded ? "Collapse order" : "Expand order"
+                      }
                       aria-expanded={isExpanded}
                       onClick={() => toggleExpanded(order.id)}
                       className="flex size-7 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
-                      {isExpanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                      {isExpanded ? (
+                        <ChevronUp className="size-3.5" />
+                      ) : (
+                        <ChevronDown className="size-3.5" />
+                      )}
                     </button>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
-                      <span className="font-mono text-xs font-medium tracking-wide">#{order.id.slice(-8).toUpperCase()}</span>
-                      <span className="text-xs text-muted-foreground">{new Date(order.createdAt).toLocaleDateString()} · {new Date(order.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      <span className="font-mono text-xs font-medium tracking-wide">
+                        #{order.id.slice(-8).toUpperCase()}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(order.createdAt).toLocaleDateString()} ·{" "}
+                        {new Date(order.createdAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
                       <span className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] capitalize">
-                        {order.deliveryStatus === "delivery" ? <Truck className="size-3" /> : <Package className="size-3" />}
+                        {order.deliveryStatus === "delivery" ? (
+                          <Truck className="size-3" />
+                        ) : (
+                          <Package className="size-3" />
+                        )}
                         {order.deliveryStatus}
                       </span>
                     </div>
@@ -809,16 +1250,28 @@ function OrdersTable({
                     {role === "seller" ? (
                       <div className="flex items-center gap-2">
                         {order.user?.image ? (
-                          <img src={order.user.image} alt={order.user.name || ""} className="size-7 rounded-full object-cover" />
+                          <img
+                            src={order.user.image}
+                            alt={order.user.name || ""}
+                            className="size-7 rounded-full object-cover"
+                          />
                         ) : (
                           <span className="flex size-7 items-center justify-center rounded-full bg-muted text-xs">
                             <UserIcon className="size-3.5" />
                           </span>
                         )}
                         <div className="min-w-0">
-                          <p className="truncate text-sm font-medium leading-tight">{order.user?.name || "Guest"}</p>
-                          <p className="truncate text-xs text-muted-foreground">{order.user?.email || order.phoneNumber || "—"}</p>
-                          {order.phoneNumber && <p className="text-xs text-muted-foreground">{order.phoneNumber}</p>}
+                          <p className="truncate text-sm font-medium leading-tight">
+                            {order.user?.name || "Guest"}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {order.user?.email || order.phoneNumber || "—"}
+                          </p>
+                          {order.phoneNumber && (
+                            <p className="text-xs text-muted-foreground">
+                              {order.phoneNumber}
+                            </p>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -829,9 +1282,16 @@ function OrdersTable({
                       >
                         <div className="flex -space-x-2">
                           {order.items.slice(0, 3).map((it) => (
-                            <div key={it.id} className="size-8 overflow-hidden rounded-lg border border-border bg-muted">
+                            <div
+                              key={it.id}
+                              className="size-8 overflow-hidden rounded-lg border border-border bg-muted"
+                            >
                               {it.product.images[0] ? (
-                                <img src={it.product.images[0]} alt={it.product.name} className="size-full object-cover" />
+                                <img
+                                  src={it.product.images[0]}
+                                  alt={it.product.name}
+                                  className="size-full object-cover"
+                                />
                               ) : (
                                 <div className="flex size-full items-center justify-center">
                                   <Package className="size-3.5 text-muted-foreground" />
@@ -847,10 +1307,21 @@ function OrdersTable({
                         </div>
                         <div className="flex flex-col">
                           <span className="text-xs font-medium">
-                            {order.items.length} item{order.items.length !== 1 && "s"}
+                            {order.items.length} item
+                            {order.items.length !== 1 && "s"}
                           </span>
-                          <span className="max-w-[160px] truncate text-xs text-muted-foreground">{order.items.map((i) => `${i.product.name} x${i.quantity}`).join(", ")}</span>
-                          <span className="text-xs font-medium text-primary">{isExpanded ? "Hide items" : order.items.length > 1 ? `View ${order.items.length} items` : "View item"}</span>
+                          <span className="max-w-[160px] truncate text-xs text-muted-foreground">
+                            {order.items
+                              .map((i) => `${i.product.name} x${i.quantity}`)
+                              .join(", ")}
+                          </span>
+                          <span className="text-xs font-medium text-primary">
+                            {isExpanded
+                              ? "Hide items"
+                              : order.items.length > 1
+                                ? `View ${order.items.length} items`
+                                : "View item"}
+                          </span>
                         </div>
                       </button>
                     )}
@@ -864,9 +1335,16 @@ function OrdersTable({
                       >
                         <div className="flex -space-x-2">
                           {order.items.slice(0, 3).map((it) => (
-                            <div key={it.id} className="size-8 overflow-hidden rounded-lg border border-border bg-muted">
+                            <div
+                              key={it.id}
+                              className="size-8 overflow-hidden rounded-lg border border-border bg-muted"
+                            >
                               {it.product.images[0] ? (
-                                <img src={it.product.images[0]} alt={it.product.name} className="size-full object-cover" />
+                                <img
+                                  src={it.product.images[0]}
+                                  alt={it.product.name}
+                                  className="size-full object-cover"
+                                />
                               ) : (
                                 <div className="flex size-full items-center justify-center">
                                   <Package className="size-3.5 text-muted-foreground" />
@@ -882,29 +1360,60 @@ function OrdersTable({
                         </div>
                         <div className="flex flex-col">
                           <span className="text-xs font-medium">
-                            {order.items.length} item{order.items.length !== 1 && "s"}
+                            {order.items.length} item
+                            {order.items.length !== 1 && "s"}
                           </span>
-                          <span className="max-w-[160px] truncate text-xs text-muted-foreground">{order.items.map((i) => `${i.product.name} x${i.quantity}`).join(", ")}</span>
-                          <span className="text-xs font-medium text-primary">{isExpanded ? "Hide items" : order.items.length > 1 ? `View ${order.items.length} items` : "View item"}</span>
+                          <span className="max-w-[160px] truncate text-xs text-muted-foreground">
+                            {order.items
+                              .map((i) => `${i.product.name} x${i.quantity}`)
+                              .join(", ")}
+                          </span>
+                          <span className="text-xs font-medium text-primary">
+                            {isExpanded
+                              ? "Hide items"
+                              : order.items.length > 1
+                                ? `View ${order.items.length} items`
+                                : "View item"}
+                          </span>
                         </div>
                       </button>
                     ) : (
                       <div className="flex flex-col">
-                        <span className="text-sm font-semibold">${order.total.toFixed(2)}</span>
-                        <span className="text-xs text-muted-foreground">
-                          sub ${order.subtotal.toFixed(2)} {order.discount > 0 && `· -${order.discount.toFixed(2)}`} {order.deliveryFee > 0 && `· ship $${order.deliveryFee.toFixed(2)}`}
+                        <span className="text-sm font-semibold">
+                          ${order.total.toFixed(2)}
                         </span>
-                        {order.promoCode && <span className="text-xs text-emerald-600">promo {order.promoCode}</span>}
+                        <span className="text-xs text-muted-foreground">
+                          sub ${order.subtotal.toFixed(2)}{" "}
+                          {order.discount > 0 &&
+                            `· -${order.discount.toFixed(2)}`}{" "}
+                          {order.deliveryFee > 0 &&
+                            `· ship $${order.deliveryFee.toFixed(2)}`}
+                        </span>
+                        {order.promoCode && (
+                          <span className="text-xs text-emerald-600">
+                            promo {order.promoCode}
+                          </span>
+                        )}
                       </div>
                     )}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <div className="flex flex-col">
-                      <span className="text-sm font-semibold">${order.total.toFixed(2)}</span>
-                      <span className="text-xs text-muted-foreground">
-                        sub ${order.subtotal.toFixed(2)} {order.discount > 0 && `· -${order.discount.toFixed(2)}`} {order.deliveryFee > 0 && `· ship $${order.deliveryFee.toFixed(2)}`}
+                      <span className="text-sm font-semibold">
+                        ${order.total.toFixed(2)}
                       </span>
-                      {order.promoCode && <span className="text-xs text-emerald-600">promo {order.promoCode}</span>}
+                      <span className="text-xs text-muted-foreground">
+                        sub ${order.subtotal.toFixed(2)}{" "}
+                        {order.discount > 0 &&
+                          `· -${order.discount.toFixed(2)}`}{" "}
+                        {order.deliveryFee > 0 &&
+                          `· ship $${order.deliveryFee.toFixed(2)}`}
+                      </span>
+                      {order.promoCode && (
+                        <span className="text-xs text-emerald-600">
+                          promo {order.promoCode}
+                        </span>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
@@ -913,41 +1422,68 @@ function OrdersTable({
                         <CreditCard className="size-3" />
                         {order.paymentMethod}
                       </span>
-                      <span className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-widest uppercase ring-1 ${paymentStyles(order.paymentStatus)}`}>
+                      <span
+                        className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tracking-widest uppercase ring-1 ${paymentStyles(order.paymentStatus)}`}
+                      >
                         <span className="size-1.5 rounded-full bg-current" />
                         {order.paymentStatus}
                       </span>
                     </div>
                   </TableCell>
                   <TableCell className="hidden sm:table-cell">
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-widest uppercase ring-1 ${statusStyles(order.status)}`}>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-widest uppercase ring-1 ${statusStyles(order.status)}`}
+                    >
                       <span className="size-1.5 rounded-full bg-current" />
                       {order.status}
                     </span>
                   </TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon-sm" className="size-7 rounded-full" onClick={() => toggleExpanded(order.id)}>
-                      {isExpanded ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      className="size-7 rounded-full"
+                      onClick={() => toggleExpanded(order.id)}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="size-3.5" />
+                      ) : (
+                        <ChevronDown className="size-3.5" />
+                      )}
                     </Button>
                   </TableCell>
                 </TableRow>
                 {isExpanded && (
-                  <TableRow key={`${order.id}-expanded`} className="bg-muted/20 hover:bg-muted/20">
+                  <TableRow
+                    key={`${order.id}-expanded`}
+                    className="bg-muted/20 hover:bg-muted/20"
+                  >
                     <TableCell colSpan={8} className="p-0">
                       <div className="bg-muted/30 p-4">
                         <div className="rounded-2xl border border-border bg-card p-4">
                           <div className="mb-3 flex items-center justify-between">
-                            <h4 className="font-heading text-sm font-semibold tracking-wide">Order items · {order.items.length}</h4>
+                            <h4 className="font-heading text-sm font-semibold tracking-wide">
+                              Order items · {order.items.length}
+                            </h4>
                             <span className="text-xs text-muted-foreground">
-                              Placed {new Date(order.createdAt).toLocaleString()} • {order.deliveryStatus} • {order.paymentMethod}
+                              Placed{" "}
+                              {new Date(order.createdAt).toLocaleString()} •{" "}
+                              {order.deliveryStatus} • {order.paymentMethod}
                             </span>
                           </div>
                           <div className="grid gap-3 sm:grid-cols-2">
                             {order.items.map((it) => (
-                              <div key={it.id} className="flex gap-3 rounded-xl border border-border bg-card p-3">
+                              <div
+                                key={it.id}
+                                className="flex gap-3 rounded-xl border border-border bg-card p-3"
+                              >
                                 <div className="size-16 shrink-0 overflow-hidden rounded-lg bg-muted">
                                   {it.product.images[0] ? (
-                                    <img src={it.product.images[0]} alt={it.product.name} className="size-full object-cover" />
+                                    <img
+                                      src={it.product.images[0]}
+                                      alt={it.product.name}
+                                      className="size-full object-cover"
+                                    />
                                   ) : (
                                     <div className="flex size-full items-center justify-center">
                                       <Package className="size-5 text-muted-foreground/50" />
@@ -955,12 +1491,22 @@ function OrdersTable({
                                   )}
                                 </div>
                                 <div className="min-w-0 flex-1">
-                                  <p className="line-clamp-1 text-sm font-medium leading-tight">{it.product.name}</p>
-                                  <p className="text-xs text-muted-foreground">Quantity: {it.quantity}</p>
+                                  <p className="line-clamp-1 text-sm font-medium leading-tight">
+                                    {it.product.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Quantity: {it.quantity}
+                                  </p>
                                   <div className="mt-1 flex items-center gap-2">
-                                    <span className="text-sm font-semibold">${it.price.toFixed(2)}</span>
-                                    <span className="text-xs text-muted-foreground">× {it.quantity}</span>
-                                    <span className="ml-auto text-sm font-semibold text-primary">${(it.price * it.quantity).toFixed(2)}</span>
+                                    <span className="text-sm font-semibold">
+                                      ${it.price.toFixed(2)}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      × {it.quantity}
+                                    </span>
+                                    <span className="ml-auto text-sm font-semibold text-primary">
+                                      ${(it.price * it.quantity).toFixed(2)}
+                                    </span>
                                   </div>
                                 </div>
                               </div>

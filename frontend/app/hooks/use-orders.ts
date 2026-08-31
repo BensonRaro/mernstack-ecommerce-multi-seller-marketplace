@@ -77,7 +77,7 @@ export function useMyOrders(params: SellerOrdersParams = {}) {
 
   return useQuery({
     queryKey: ["my-orders", params],
-    queryFn: () => api.get<SellerOrdersResponse>(`/api/orders/my?${qs.toString()}`),
+    queryFn: () => api.get<SellerOrdersResponse>(`/api/orders?${qs.toString()}`),
     placeholderData: keepPreviousData,
   });
 }

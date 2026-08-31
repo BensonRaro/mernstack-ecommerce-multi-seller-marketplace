@@ -39,7 +39,9 @@ import {
 } from "@/components/ui/empty";
 import { SearchInput } from "@/components/globals/search-input";
 import { DataPagination } from "@/components/globals/data-pagination";
+import { SellerRevocationBanner } from "@/components/seller/seller-revocation-banner";
 import { useSellerProducts, useDeleteProduct } from "@/hooks/use-products";
+import { useSellerMe } from "@/hooks/use-auth";
 import { exportToCsv, exportToJson } from "@/lib/export";
 import { categories } from "@/constants/categories";
 import { toast } from "@/components/ui/toast";
@@ -77,6 +79,11 @@ export default function SellerProducts() {
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState("all");
   const limit = 8;
+
+  const { data: sellerData } = useSellerMe();
+  const seller = sellerData?.seller;
+  const isApproved = seller?.approved ?? false;
+  const isRevoked = !isApproved && !!seller?.revokedAt;
 
   const [productToDelete, setProductToDelete] = useState<import("@/hooks/use-products").Product | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -158,6 +165,12 @@ export default function SellerProducts() {
 
   return (
     <div className="mx-auto max-w-[1200px] space-y-5">
+      <SellerRevocationBanner
+        approved={seller?.approved ?? false}
+        revokedAt={seller?.revokedAt ?? null}
+        revokedReason={seller?.revokedReason ?? null}
+      />
+
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-heading text-[1.7rem] font-semibold tracking-tight">Products</h1>
@@ -207,10 +220,12 @@ export default function SellerProducts() {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Button size="sm" render={<Link to="/seller/products/create" />}>
-            <Plus data-icon="inline-start" />
-            Add Product
-          </Button>
+          {isApproved && (
+            <Button size="sm" render={<Link to="/seller/products/create" />}>
+              <Plus data-icon="inline-start" />
+              Add Product
+            </Button>
+          )}
         </div>
       </div>
 
@@ -229,7 +244,7 @@ export default function SellerProducts() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Select value={category} onValueChange={handleCategoryChange}>
+            <Select value={category} onValueChange={(v) => v !== null && handleCategoryChange(v)}>
               <SelectTrigger size="sm" className="h-9 min-w-[150px] rounded-full border border-border bg-muted/40 px-4 text-xs font-medium tracking-widest uppercase">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
@@ -243,7 +258,7 @@ export default function SellerProducts() {
               </SelectContent>
             </Select>
 
-            <Select value={status} onValueChange={handleStatusChange}>
+            <Select value={status} onValueChange={(v) => v !== null && handleStatusChange(v)}>
               <SelectTrigger size="sm" className="h-9 min-w-[140px] rounded-full border border-border bg-muted/40 px-4 text-xs font-medium tracking-widest uppercase">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -344,10 +359,20 @@ export default function SellerProducts() {
                   Create your first product to start selling. Your catalog will appear here.
                 </EmptyDescription>
                 <EmptyContent>
-                  <Button size="sm" render={<Link to="/seller/products/create" />}>
-                    <Plus data-icon="inline-start" />
-                    Create product
-                  </Button>
+                  {isApproved ? (
+                    <Button size="sm" render={<Link to="/seller/products/create" />}>
+                      <Plus data-icon="inline-start" />
+                      Create product
+                    </Button>
+                  ) : isRevoked ? (
+                    <p className="text-sm text-muted-foreground">
+                      Your seller account has been revoked. You cannot create products.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Your seller account is pending approval. You cannot create products yet.
+                    </p>
+                  )}
                 </EmptyContent>
               </>
             )}
@@ -436,37 +461,39 @@ export default function SellerProducts() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger
-                              render={
-                                <Button variant="ghost" size="icon-sm" className="size-7 rounded-full opacity-0 group-hover:opacity-100">
-                                  <span className="sr-only">Actions</span>
-                                  <Pencil className="size-3.5" />
-                                </Button>
-                              }
-                            />
-                            <DropdownMenuContent align="end" className="w-40">
-                              <DropdownMenuGroup>
-                                <DropdownMenuItem render={<Link to={`/seller/products/${product.id}/edit`} />}>
-                                  <Pencil />
-                                  Edit
-                                </DropdownMenuItem>
-                              </DropdownMenuGroup>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuGroup>
-                                <DropdownMenuItem
-                                  variant="destructive"
-                                  onClick={() => {
-                                    setProductToDelete(product);
-                                    setIsDeleteOpen(true);
-                                  }}
-                                >
-                                  <Trash2 />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {isApproved && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger
+                                render={
+                                  <Button variant="ghost" size="icon-sm" className="size-7 rounded-full opacity-0 group-hover:opacity-100">
+                                    <span className="sr-only">Actions</span>
+                                    <Pencil className="size-3.5" />
+                                  </Button>
+                                }
+                              />
+                              <DropdownMenuContent align="end" className="w-40">
+                                <DropdownMenuGroup>
+                                  <DropdownMenuItem render={<Link to={`/seller/products/${product.id}/edit`} />}>
+                                    <Pencil />
+                                    Edit
+                                  </DropdownMenuItem>
+                                </DropdownMenuGroup>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuGroup>
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={() => {
+                                      setProductToDelete(product);
+                                      setIsDeleteOpen(true);
+                                    }}
+                                  >
+                                    <Trash2 />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuGroup>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </TableCell>
                       </TableRow>
                     );

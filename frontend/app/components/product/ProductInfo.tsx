@@ -224,11 +224,11 @@ export function ProductInfo({ product }: ProductInfoProps) {
         </span>
       </div>
 
-      <Accordion type="single" collapsible className="rounded-2xl border border-border bg-card px-4">
+      <Accordion className="rounded-2xl border border-border bg-card px-4">
         <AccordionItem value="details">
           <AccordionTrigger className="text-sm font-medium">Product details</AccordionTrigger>
           <AccordionContent className="text-sm leading-relaxed text-muted-foreground">
-            {product.description || "No additional details."} {product.seller && `Sold by ${product.seller.name}.`}
+            {product.description || "No additional details."} {product.seller?.name && `Sold by ${product.seller.name}.`}
           </AccordionContent>
         </AccordionItem>
         <AccordionItem value="shipping">

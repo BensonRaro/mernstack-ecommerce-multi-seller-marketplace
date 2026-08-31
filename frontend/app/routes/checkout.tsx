@@ -1,6 +1,6 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { ArrowLeft, ShieldCheck, Plus, AlertCircle, Phone, MapPin } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Plus, AlertCircle, Phone, MapPin, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { DeliveryToggle } from "@/components/checkout/DeliveryToggle";
@@ -12,8 +12,6 @@ import { useUserProfile } from "@/hooks/use-user-profile";
 import { useValidatePromo } from "@/hooks/use-promos";
 import { api } from "@/lib/api";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { cn } from "@/lib/utils";
 
 export default function Checkout() {
   const navigate = useNavigate();
@@ -38,6 +36,13 @@ export default function Checkout() {
 
   const [selectedAddressId, setSelectedAddressId] = useState(defaultAddress?.id ?? addresses[0]?.id ?? "");
   const [selectedPhoneId, setSelectedPhoneId] = useState(defaultPhone?.id ?? phones[0]?.id ?? "");
+
+  useEffect(() => {
+    if (!selectedAddressId && addresses[0]) setSelectedAddressId(addresses[0].id);
+  }, [addresses, selectedAddressId]);
+  useEffect(() => {
+    if (!selectedPhoneId && phones[0]) setSelectedPhoneId(phones[0].id);
+  }, [phones, selectedPhoneId]);
 
   const selectedAddress = addresses.find((a) => a.id === selectedAddressId) ?? addresses[0] ?? null;
   const selectedPhone = phones.find((p) => p.id === selectedPhoneId) ?? phones[0] ?? null;
@@ -84,6 +89,10 @@ export default function Checkout() {
   async function handlePlaceOrder() {
     if (deliveryStatus === "delivery" && !selectedAddress) {
       toast.add({ type: "error", title: "Select delivery address" });
+      return;
+    }
+    if (deliveryStatus === "delivery" && selectedAddress && (!selectedAddress.street?.trim() || !selectedAddress.city?.trim() || !selectedAddress.zip?.trim())) {
+      toast.add({ type: "error", title: "Incomplete address", description: "Please update your address with city and zip code in your profile." });
       return;
     }
     if (!selectedPhone) {
@@ -166,48 +175,50 @@ export default function Checkout() {
                   </Card>
                 ) : (
                   <div className="rounded-2xl border border-border bg-card p-5">
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="mb-3 flex items-center justify-between">
                       <h3 className="font-heading text-sm font-semibold tracking-wider uppercase">Delivery Address</h3>
                       <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/profile?tab=address")}>
-                        <Plus className="size-3.5" /> Add new
+                        <Pencil className="size-3.5" /> Change
                       </Button>
                     </div>
-                    <RadioGroup value={selectedAddressId} onValueChange={setSelectedAddressId} disabled={addresses.length <= 1}>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        {addresses.map((addr) => {
-                          const active = selectedAddressId === addr.id;
-                          return (
-                            <RadioGroupItem key={addr.id} value={addr.id} className={cn(
-                                "group relative flex flex-col gap-2 rounded-2xl border bg-card p-4 text-left transition-all",
-                                active ? "border-primary ring-1 ring-primary/20 bg-primary/[0.03]" : "border-border hover:border-foreground/20 hover:bg-muted/30"
-                              )}>
-                              <span className={cn("absolute right-3 top-3 flex size-5 items-center justify-center rounded-full border text-[10px]", active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background")}>
-                                {active && <span className="size-2 rounded-full bg-primary-foreground" />}
-                              </span>
-                              <span className="inline-flex items-center gap-1.5 text-xs font-semibold tracking-widest uppercase text-muted-foreground">
-                                <MapPin className="size-3.5" />
-                                {addr.label}
-                                {addr.isDefault && <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px]">Default</span>}
-                              </span>
-                              <span className="text-sm font-medium leading-tight">{addr.street}</span>
-                              <span className="text-xs text-muted-foreground">{addr.city} · {addr.zip}</span>
-                              <span className="text-xs text-muted-foreground">{addr.country}</span>
-                            </RadioGroupItem>
-                          );
-                        })}
+                    {selectedAddress ? (
+                      <div className="flex items-center gap-4 rounded-xl border border-border bg-muted/20 p-4">
+                        <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <MapPin className="size-5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{selectedAddress.label}</span>
+                            {selectedAddress.isDefault && (
+                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Default</span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{selectedAddress.street}</p>
+                          <p className="text-xs text-muted-foreground">{selectedAddress.city} · {selectedAddress.zip} · {selectedAddress.country}</p>
+                        </div>
                       </div>
-                    </RadioGroup>
+                    ) : (
+                      <div className="rounded-xl border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
+                        No address selected.
+                      </div>
+                    )}
                   </div>
                 )}
               </>
             ) : (
               <div className="rounded-2xl border border-border bg-card p-5">
                 <h3 className="font-heading text-sm font-semibold tracking-wider uppercase">Pickup</h3>
-                <p className="mt-2 text-sm text-muted-foreground">Collect from our store at 124 Maple Street, Springfield, IL 62701. You’ll be notified when ready.</p>
+                <p className="mt-2 text-sm text-muted-foreground">Collect from our store at 124 Maple Street, Springfield, IL 62701. You'll be notified when ready.</p>
               </div>
             )}
 
             <div className="rounded-2xl border border-border bg-card p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="font-heading text-sm font-semibold tracking-wider uppercase">Phone Number</h3>
+                <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/profile?tab=phone")}>
+                  <Pencil className="size-3.5" /> Change
+                </Button>
+              </div>
               {phones.length === 0 ? (
                 <Card className="border-destructive/50">
                   <CardHeader>
@@ -228,39 +239,23 @@ export default function Checkout() {
                     </Button>
                   </CardContent>
                 </Card>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-heading text-sm font-semibold tracking-wider uppercase">Phone Number</h3>
-                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => navigate("/profile?tab=phone")}>
-                      <Plus className="size-3.5" /> Add new
-                    </Button>
-                  </div>
-                  <RadioGroup value={selectedPhoneId} onValueChange={setSelectedPhoneId} disabled={phones.length <= 1}>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {phones.map((p) => {
-                        const active = selectedPhoneId === p.id;
-                        return (
-                          <RadioGroupItem key={p.id} value={p.id} className={cn(
-                              "relative flex items-center gap-3 rounded-2xl border bg-card p-4 text-left transition-all",
-                              active ? "border-primary ring-1 ring-primary/20 bg-primary/[0.03]" : "border-border hover:border-foreground/20 hover:bg-muted/30"
-                            )}>
-                            <span className={cn("flex size-9 items-center justify-center rounded-full border", active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted text-muted-foreground")}>
-                              <Phone className="size-4" />
-                            </span>
-                            <span className="flex flex-col">
-                              <span className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">{p.label}</span>
-                              <span className="text-sm font-medium">{p.number}</span>
-                            </span>
-                            <span className={cn("ml-auto flex size-5 items-center justify-center rounded-full border", active ? "border-primary bg-primary" : "border-border")}>
-                              {active && <span className="size-2 rounded-full bg-primary-foreground" />}
-                            </span>
-                          </RadioGroupItem>
-                        );
-                      })}
+              ) : selectedPhone ? (
+                <div className="flex items-center gap-4">
+                  <span className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Phone className="size-5" />
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{selectedPhone.label}</span>
+                      {selectedPhone.isDefault && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">Default</span>
+                      )}
                     </div>
-                  </RadioGroup>
+                    <p className="text-sm font-medium font-mono">{selectedPhone.number}</p>
+                  </div>
                 </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No phone selected.</p>
               )}
             </div>
 

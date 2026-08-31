@@ -12,9 +12,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { Empty, EmptyMedia, EmptyTitle, EmptyDescription, EmptyContent } from "@/components/ui/empty";
 import { toast } from "@/components/ui/toast";
 import { useCreateProduct, useProduct, useUpdateProduct } from "@/hooks/use-products";
+import { useSellerMe } from "@/hooks/use-auth";
+import { SellerRevocationBanner } from "@/components/seller/seller-revocation-banner";
 import { categories } from "@/constants/categories";
 import { cn } from "@/lib/utils";
-import { Save, Plus, X, ArrowLeft, AlertCircle } from "lucide-react";
+import { Save, Plus, X, ArrowLeft, AlertCircle, Ban } from "lucide-react";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const GENDERS = [
@@ -36,6 +38,9 @@ export default function CreateProduct() {
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const { data: productData, isLoading: isLoadingProduct, isError: isProductError, error: productError } = useProduct(isEdit ? id : undefined);
+  const { data: sellerData } = useSellerMe();
+  const seller = sellerData?.seller;
+  const isApproved = seller?.approved ?? false;
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -206,6 +211,38 @@ export default function CreateProduct() {
     );
   }
 
+  if (!isApproved) {
+    return (
+      <div className="mx-auto max-w-6xl space-y-6">
+        <SellerRevocationBanner
+          approved={seller?.approved ?? false}
+          revokedAt={seller?.revokedAt ?? null}
+          revokedReason={seller?.revokedReason ?? null}
+        />
+        <Empty className="border py-16">
+          <EmptyMedia variant="icon">
+            <AlertCircle />
+          </EmptyMedia>
+          <EmptyTitle>{seller?.revokedAt ? "Account Revoked" : "Account Not Approved"}</EmptyTitle>
+          <EmptyDescription>
+            {seller?.revokedAt
+              ? "Your seller account has been revoked. You cannot create or edit products."
+              : "Your seller account is pending approval. You cannot create products yet."}
+          </EmptyDescription>
+          <EmptyContent>
+            <Button variant="outline" size="sm" onClick={() => navigate("/seller/products")}>
+              <ArrowLeft data-icon="inline-start" />
+              Back to products
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
+    );
+  }
+
+  const isRejected = isEdit && productData?.product?.status === "rejected";
+  const rejectionReason = isEdit ? productData?.product?.rejectionReason : null;
+
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-6 flex items-center justify-between">
@@ -225,30 +262,52 @@ export default function CreateProduct() {
           </div>
           {isEdit && isPending && <Spinner className="size-4 text-muted-foreground" />}
         </div>
-        <div className="flex items-center gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleSubmit("draft")}
-            disabled={isPending}
-            className="rounded-full"
-          >
-            <Save data-icon="inline-start" />
-            {isEdit ? "Save Draft" : "Save Draft"}
-          </Button>
-          <Button
-            type="button"
-            onClick={() => handleSubmit("active")}
-            disabled={isPending}
-            className="rounded-full"
-          >
-            {isPending ? <Spinner data-icon="inline-start" /> : isEdit ? <Save data-icon="inline-start" /> : <Plus data-icon="inline-start" />}
-            {isEdit ? "Update Product" : "Add Product"}
-          </Button>
-        </div>
+        {!isRejected && (
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleSubmit("draft")}
+              disabled={isPending}
+              className="rounded-full"
+            >
+              <Save data-icon="inline-start" />
+              {isEdit ? "Save Draft" : "Save Draft"}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => handleSubmit("active")}
+              disabled={isPending}
+              className="rounded-full"
+            >
+              {isPending ? <Spinner data-icon="inline-start" /> : isEdit ? <Save data-icon="inline-start" /> : <Plus data-icon="inline-start" />}
+              {isEdit ? "Update Product" : "Add Product"}
+            </Button>
+          </div>
+        )}
       </div>
 
-      <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+      {isRejected && rejectionReason && (
+        <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+              <Ban className="size-4 text-destructive" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-semibold text-destructive">Product Rejected</h3>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                This product was rejected by an admin. You cannot edit or delete it.
+              </p>
+              <div className="mt-2 rounded-lg bg-background/80 px-3 py-2">
+                <p className="text-xs font-medium text-muted-foreground">Reason:</p>
+                <p className="mt-0.5 text-sm">{rejectionReason}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={(e) => { e.preventDefault(); if (!isRejected) handleSubmit(); }}>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_340px]">
           <div className="space-y-6">
             <Card>
@@ -266,7 +325,7 @@ export default function CreateProduct() {
                         onChange={(e) => setName(e.target.value)}
                         placeholder="e.g. Puffer Jacket With Pocket Detail"
                         aria-invalid={!!errors.name}
-                        disabled={isPending}
+                        disabled={isPending || isRejected}
                       />
                       <FieldError>{errors.name}</FieldError>
                     </FieldContent>
@@ -281,7 +340,7 @@ export default function CreateProduct() {
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Describe your product..."
                         rows={5}
-                        disabled={isPending}
+                        disabled={isPending || isRejected}
                       />
                     </FieldContent>
                   </Field>
@@ -303,7 +362,7 @@ export default function CreateProduct() {
                           key={s}
                           type="button"
                           onClick={() => toggleSize(s)}
-                          disabled={isPending}
+                          disabled={isPending || isRejected}
                           className={cn(
                             "h-9 min-w-9 rounded-lg border px-3 text-sm font-medium transition-colors",
                             sizes.includes(s)
@@ -328,7 +387,7 @@ export default function CreateProduct() {
                           key={g.value}
                           type="button"
                           onClick={() => toggleGender(g.value)}
-                          disabled={isPending}
+                          disabled={isPending || isRejected}
                           className={cn(
                             "flex h-9 items-center gap-2 rounded-lg border px-4 text-sm font-medium transition-colors",
                             gender === g.value
@@ -369,7 +428,7 @@ export default function CreateProduct() {
                         onChange={(e) => setPrice(e.target.value)}
                         placeholder="$0.00"
                         aria-invalid={!!errors.price}
-                        disabled={isPending}
+                        disabled={isPending || isRejected}
                       />
                       <FieldError>{errors.price}</FieldError>
                     </FieldContent>
@@ -387,7 +446,7 @@ export default function CreateProduct() {
                         onChange={(e) => setStock(e.target.value)}
                         placeholder="0"
                         aria-invalid={!!errors.stock}
-                        disabled={isPending}
+                        disabled={isPending || isRejected}
                       />
                       <FieldError>{errors.stock}</FieldError>
                     </FieldContent>
@@ -406,7 +465,7 @@ export default function CreateProduct() {
                         onChange={(e) => setDiscount(e.target.value)}
                         placeholder="0%"
                         aria-invalid={!!errors.discount}
-                        disabled={isPending}
+                        disabled={isPending || isRejected}
                       />
                       <FieldError>{errors.discount}</FieldError>
                     </FieldContent>
@@ -419,7 +478,7 @@ export default function CreateProduct() {
                         id="status"
                         value={status}
                         onChange={(e) => setStatus(e.target.value)}
-                        disabled={isPending}
+                        disabled={isPending || isRejected}
                       >
                         <NativeSelectOption value="draft">Draft</NativeSelectOption>
                         <NativeSelectOption value="active">Active</NativeSelectOption>
@@ -488,7 +547,7 @@ export default function CreateProduct() {
                     <NativeSelect
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      disabled={isPending}
+                      disabled={isPending || isRejected}
                     >
                       <NativeSelectOption value="">Select category</NativeSelectOption>
                       {categories.map((cat) => (
@@ -508,7 +567,7 @@ export default function CreateProduct() {
                         type="button"
                         onClick={() => setCategory("")}
                         className="ml-0.5 rounded-full p-0.5 hover:bg-foreground/10"
-                        disabled={isPending}
+                        disabled={isPending || isRejected}
                       >
                         <X className="size-3" />
                       </button>
@@ -532,7 +591,7 @@ export default function CreateProduct() {
                       onClick={() =>
                         colors.includes(hex) ? removeColor(hex) : addColor(hex)
                       }
-                      disabled={isPending}
+                      disabled={isPending || isRejected}
                       className={cn(
                         "size-8 rounded-full border-2 transition-transform hover:scale-110 disabled:opacity-50",
                         colors.includes(hex)
@@ -556,14 +615,14 @@ export default function CreateProduct() {
                         addColor(colorInput);
                       }
                     }}
-                    disabled={isPending}
+                    disabled={isPending || isRejected}
                   />
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() => addColor(colorInput)}
-                    disabled={!colorInput.trim() || isPending}
+                    disabled={!colorInput.trim() || isPending || isRejected}
                   >
                     Add
                   </Button>
@@ -584,7 +643,7 @@ export default function CreateProduct() {
                           type="button"
                           onClick={() => removeColor(hex)}
                           className="rounded-full p-0.5 hover:bg-foreground/10"
-                          disabled={isPending}
+                          disabled={isPending || isRejected}
                         >
                           <X className="size-3" />
                         </button>

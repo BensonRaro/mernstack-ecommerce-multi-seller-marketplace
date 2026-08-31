@@ -139,7 +139,7 @@ export default function SellerOrders() {
             {isFetching && !isLoading && <Spinner className="size-4 text-muted-foreground" />}
           </div>
           <div className="flex items-center gap-2">
-            <Select value={status} onValueChange={handleStatusChange}>
+            <Select value={status} onValueChange={(v) => v !== null && handleStatusChange(v)}>
               <SelectTrigger size="sm" className="h-9 min-w-[150px] rounded-full border border-border bg-muted/40 px-4 text-xs font-medium tracking-widest uppercase">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>

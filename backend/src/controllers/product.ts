@@ -69,7 +69,10 @@ export async function createProduct(req: Request, res: Response) {
     }
 
     if (!seller.approved) {
-      return res.status(403).json({ error: "Seller account not yet approved" });
+      if (seller.revokedAt) {
+        return res.status(403).json({ error: "Your seller account has been revoked." });
+      }
+      return res.status(403).json({ error: "Your seller account is pending approval." });
     }
 
     const product = await prisma.product.create({
@@ -132,6 +135,11 @@ export async function listProducts(req: Request, res: Response) {
 
     if (sellerIdParam) {
       (where as any).sellerId = sellerIdParam;
+    }
+
+    // Public listings: hide products from sellers who are not approved
+    if (!mine) {
+      (where as any).seller = { approved: true };
     }
 
     if (mine) {
@@ -287,7 +295,7 @@ export async function getBestSellers(req: Request, res: Response) {
   try {
     const limit = Math.min(12, Math.max(1, parseInt(req.query.limit as string) || 6));
     const orderItems = await prisma.orderItem.findMany({
-      where: { order: { status: { not: "cancelled" } } },
+      where: { order: { status: { not: "cancelled" } }, product: { seller: { approved: true } } },
       select: {
         productId: true,
         quantity: true,
@@ -334,7 +342,7 @@ export async function getBestSellers(req: Request, res: Response) {
 
     if (sorted.length === 0) {
       const fallback = await prisma.product.findMany({
-        where: { status: "active" },
+        where: { status: "active", seller: { approved: true } },
         orderBy: { createdAt: "desc" },
         take: limit,
         include: { seller: { select: { id: true, name: true, image: true, username: true } } },
@@ -388,10 +396,14 @@ export async function getProduct(req: Request, res: Response) {
 
     const product = await prisma.product.findUnique({
       where: { id },
-      include: { seller: { select: { id: true, name: true, image: true, username: true } } },
+      include: { seller: { select: { id: true, name: true, image: true, username: true, approved: true } } },
     });
 
     if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+
+    if (!product.seller?.approved) {
       return res.status(404).json({ error: "Product not found" });
     }
 
@@ -435,6 +447,10 @@ export async function updateProduct(req: Request, res: Response) {
 
     if (existing.sellerId !== seller.id) {
       return res.status(403).json({ error: "Not authorized to update this product" });
+    }
+
+    if (existing.status === "rejected") {
+      return res.status(403).json({ error: "This product has been rejected by an admin and cannot be edited. Please contact support for details." });
     }
 
     if (name !== undefined && (typeof name !== "string" || name.trim().length === 0)) {
@@ -502,6 +518,10 @@ export async function deleteProduct(req: Request, res: Response) {
 
     if (existing.sellerId !== seller.id) {
       return res.status(403).json({ error: "Not authorized to delete this product" });
+    }
+
+    if (existing.status === "rejected") {
+      return res.status(403).json({ error: "This product has been rejected by an admin and cannot be deleted. Please contact support for details." });
     }
 
     await prisma.product.delete({ where: { id } });

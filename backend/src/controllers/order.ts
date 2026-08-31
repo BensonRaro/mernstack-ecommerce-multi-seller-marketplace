@@ -59,7 +59,7 @@ export async function createOrder(req: Request, res: Response) {
       return res.status(400).json({ error: "Cart is empty" });
     }
     if (deliveryStatus === "delivery") {
-      if (!address || !address.street || !address.city || !address.zip) {
+      if (!address || !address.street?.trim() || !address.city?.trim() || !address.zip?.trim()) {
         return res.status(400).json({ error: "Delivery address required" });
       }
       if (!phone || phone.trim().length < 7) {

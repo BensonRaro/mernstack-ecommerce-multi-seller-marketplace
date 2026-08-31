@@ -192,7 +192,7 @@ export default function Shop() {
 
                   <div className="flex items-center gap-2">
                     <span className="hidden text-xs font-medium tracking-widest uppercase text-muted-foreground sm:block">Sort By:</span>
-                    <Select value={sort} onValueChange={handleSortChange}>
+                    <Select value={sort} onValueChange={(v) => v !== null && handleSortChange(v)}>
                       <SelectTrigger size="sm" className="h-9 min-w-[160px] rounded-full border bg-card px-4 text-xs font-medium">
                         <SelectValue />
                       </SelectTrigger>

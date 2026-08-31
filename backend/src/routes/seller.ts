@@ -70,7 +70,7 @@ router.get("/by-username/:username", async (req, res) => {
     });
 
     const reviews = await prisma.review.findMany({
-      where: { product: { sellerId: seller.id } },
+      where: { product: { sellerId: seller.id, status: "active" } },
       include: {
         user: { select: { id: true, name: true, image: true } },
         product: { select: { id: true, name: true, images: true } },
@@ -80,7 +80,7 @@ router.get("/by-username/:username", async (req, res) => {
     });
 
     const agg = await prisma.review.aggregate({
-      where: { product: { sellerId: seller.id } },
+      where: { product: { sellerId: seller.id, status: "active" } },
       _avg: { rating: true },
       _count: { rating: true },
     });
@@ -89,7 +89,14 @@ router.get("/by-username/:username", async (req, res) => {
     const totalReviews = agg._count.rating ?? 0;
     const productCount = await prisma.product.count({ where: { sellerId: seller.id, status: "active" } });
 
-    return res.json({ seller, products, reviews, avgRating, totalReviews, productCount });
+    return res.json({
+      seller,
+      products,
+      reviews,
+      avgRating,
+      totalReviews,
+      productCount,
+    });
   } catch (error) {
     console.error("Error fetching seller by username:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -176,9 +183,9 @@ router.get("/stats", requireAuth, requireSeller, async (req, res) => {
     if (!seller) return res.status(404).json({ error: "Seller profile not found" });
 
     const [productCount, reviewAgg, orderItems] = await Promise.all([
-      prisma.product.count({ where: { sellerId: seller.id } }),
+      prisma.product.count({ where: { sellerId: seller.id, status: { not: "archived" } } }),
       prisma.review.aggregate({
-        where: { product: { sellerId: seller.id } },
+        where: { product: { sellerId: seller.id, status: { not: "archived" } } },
         _avg: { rating: true },
         _count: { rating: true },
       }),
@@ -206,6 +213,7 @@ router.get("/stats", requireAuth, requireSeller, async (req, res) => {
               createdAt: true,
               updatedAt: true,
               sellerId: true,
+              status: true,
               seller: { select: { id: true, name: true, image: true, username: true } },
             },
           },
@@ -216,7 +224,7 @@ router.get("/stats", requireAuth, requireSeller, async (req, res) => {
     const avgRating = reviewAgg._avg.rating ? Number(reviewAgg._avg.rating.toFixed(1)) : 0;
     const totalReviews = reviewAgg._count.rating ?? 0;
 
-    const validItems = orderItems.filter((it) => it.order.status !== "cancelled");
+    const validItems = orderItems.filter((it) => it.order.status !== "cancelled" && it.product.status !== "archived");
     const orderIds = new Set(validItems.map((it) => it.orderId));
     const totalOrders = orderIds.size;
     const totalRevenue = validItems.reduce((sum, it) => sum + it.price * it.quantity, 0);

@@ -45,7 +45,6 @@ export function useUpdateUserProfile() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (data: {
-      address: string;
       phone: string;
     }) => {
       return api.put<UserProfile>("/api/user/profile", data);

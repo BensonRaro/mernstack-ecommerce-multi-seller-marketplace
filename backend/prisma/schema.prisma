@@ -43,6 +43,8 @@ model Seller {
 	image       String?
 	description String?
 	approved    Boolean   @default(false)
+	revokedAt   DateTime?
+	revokedReason String?
 	createdAt   DateTime  @default(now())
 	updatedAt   DateTime  @updatedAt
 
@@ -105,21 +107,22 @@ model Verification {
 }
 
 model Product {
-	id          String   @id @default(auto()) @map("_id") @db.ObjectId
-	name        String
-	description String?
-	price       Float
-	discount    Float    @default(0)
-	category    String
-	images      String[]
-	stock       Int      @default(0)
-	sizes       String[]
-	colors      String[]
-	gender      String?
-	status      String   @default("draft")
-	sellerId    String
-	createdAt   DateTime @default(now())
-	updatedAt   DateTime @updatedAt
+	id              String   @id @default(auto()) @map("_id") @db.ObjectId
+	name            String
+	description     String?
+	price           Float
+	discount        Float    @default(0)
+	category        String
+	images          String[]
+	stock           Int      @default(0)
+	sizes           String[]
+	colors          String[]
+	gender          String?
+	status          String   @default("draft")
+	rejectionReason String?
+	sellerId        String
+	createdAt       DateTime @default(now())
+	updatedAt       DateTime @updatedAt
 
 	seller      Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 	orderItems  OrderItem[]
