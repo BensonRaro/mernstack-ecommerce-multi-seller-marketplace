@@ -26,6 +26,7 @@
     "express": "^5.2.1",
     "helmet": "^8.3.0",
     "morgan": "^1.11.0",
+    "resend": "^6.25.0",
     "stripe": "^22.0.0",
     "typescript": "^5.9.3",
     "undici-types": "^8.3.0",

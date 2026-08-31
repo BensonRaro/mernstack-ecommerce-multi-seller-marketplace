@@ -154,3 +154,20 @@ read AGENTS.md, profile page
 43. build admin all products page - include filter(by category and search) and pagination, approve/reject. Use tanstack query for api calls. Use shadcn ui components but customize them to match the overall design of the application.
 
 44. Build admi dashboard.
+
+45. we need to send the user an email after a very important change e.g prdoct been reject, order status change, seller status change etc
+    design a custom email template for our emails.
+    use:
+    ``
+    import { Resend } from 'resend';
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+    const { data, error } = await resendClient.emails.send({
+      from: "Resend <onboarding@resend.dev>",(don't make changes here - must remain the same so as to work)
+      to: ["developerspack.team@gmail.com"],(don't make changes here - must remain the same so as to work)
+      subject: subject,
+      html: html,
+    });
+
+``

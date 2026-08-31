@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { stripe } from "../lib/stripe.js";
+import { sendOrderStatusEmail } from "../lib/emails.js";
 
 const VALID_DELIVERY = ["pickup", "delivery"] as const;
 const VALID_PAYMENT = ["cod", "stripe"] as const;
@@ -337,7 +338,21 @@ export async function updateOrderStatus(req: Request, res: Response) {
     const owns = order.items.some((it) => it.sellerId === seller.id);
     if (!owns) return res.status(403).json({ error: "Not authorized for this order" });
 
-    const updated = await prisma.order.update({ where: { id }, data: { status } });
+    const updated = await prisma.order.update({
+      where: { id },
+      data: { status },
+      include: { user: { select: { name: true, email: true } } },
+    });
+
+    if (updated.user?.email) {
+      sendOrderStatusEmail({
+        to: updated.user.email,
+        buyerName: updated.user.name || "Customer",
+        orderId: order.id,
+        status,
+      });
+    }
+
     return res.json({ order: updated });
   } catch (e) {
     console.error("updateOrderStatus error", e);

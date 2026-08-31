@@ -2,6 +2,13 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middlewares/require-auth.js";
 import { requireAdmin } from "../middlewares/require-admin.js";
+import {
+  sendSellerApprovedEmail,
+  sendSellerRejectedEmail,
+  sendUserBannedEmail,
+  sendProductRejectedEmail,
+  sendProductApprovedEmail,
+} from "../lib/emails.js";
 
 const router = Router();
 
@@ -84,13 +91,23 @@ router.patch(
     try {
       const id = String(req.params.id);
 
-      const seller = await prisma.seller.findUnique({ where: { id } });
+      const seller = await prisma.seller.findUnique({
+        where: { id },
+        include: { user: { select: { name: true, email: true } } },
+      });
       if (!seller) return res.status(404).json({ error: "Seller not found" });
 
       const updated = await prisma.seller.update({
         where: { id },
         data: { approved: true, revokedAt: null, revokedReason: null },
       });
+
+      if (seller.user.email) {
+        sendSellerApprovedEmail({
+          to: seller.user.email,
+          sellerName: seller.user.name || seller.name,
+        });
+      }
 
       return res.json({ seller: updated });
     } catch (error) {
@@ -116,7 +133,10 @@ router.patch(
         return res.status(400).json({ error: "Reason must be under 500 characters" });
       }
 
-      const seller = await prisma.seller.findUnique({ where: { id } });
+      const seller = await prisma.seller.findUnique({
+        where: { id },
+        include: { user: { select: { name: true, email: true } } },
+      });
       if (!seller) return res.status(404).json({ error: "Seller not found" });
 
       const [updated] = await prisma.$transaction([
@@ -133,6 +153,14 @@ router.patch(
           data: { status: "archived" },
         }),
       ]);
+
+      if (seller.user.email) {
+        sendSellerRejectedEmail({
+          to: seller.user.email,
+          sellerName: seller.user.name || seller.name,
+          reason: reason.trim(),
+        });
+      }
 
       return res.json({ seller: updated });
     } catch (error) {
@@ -268,6 +296,13 @@ router.patch(
         where: { id },
         data: { banned },
       });
+
+      if (banned && user.email) {
+        sendUserBannedEmail({
+          to: user.email,
+          userName: user.name || "User",
+        });
+      }
 
       if (user.seller) {
         if (banned) {
@@ -441,7 +476,7 @@ router.patch(
 
       const updateData: Record<string, unknown> = { status };
       if (status === "rejected") {
-        updateData.rejectionReason = reason.trim();
+        updateData.rejectionReason = reason!.trim();
       } else {
         updateData.rejectionReason = null;
       }
@@ -455,6 +490,33 @@ router.patch(
           },
         },
       });
+
+      if (status === "rejected" && updated.seller) {
+        const sellerUser = await prisma.user.findUnique({
+          where: { id: updated.sellerId },
+          select: { email: true },
+        });
+        if (sellerUser?.email) {
+          sendProductRejectedEmail({
+            to: sellerUser.email,
+            productName: product.name,
+            reason: reason!.trim(),
+          });
+        }
+      }
+
+      if (status === "active" && product.status === "rejected" && updated.seller) {
+        const sellerUser = await prisma.user.findUnique({
+          where: { id: updated.sellerId },
+          select: { email: true },
+        });
+        if (sellerUser?.email) {
+          sendProductApprovedEmail({
+            to: sellerUser.email,
+            productName: product.name,
+          });
+        }
+      }
 
       return res.json({ product: updated });
     } catch (error) {

@@ -196,7 +196,7 @@ model Order {
 	subtotal       Float
 	deliveryFee    Float    @default(0)
 	total          Float
-	stripeSessionId String?  @unique
+	stripeSessionId String?
 	createdAt      DateTime @default(now())
 	updatedAt      DateTime @updatedAt
 
