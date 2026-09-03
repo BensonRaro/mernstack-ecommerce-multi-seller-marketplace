@@ -132,6 +132,8 @@ export function useUpdateProduct() {
       queryClient.invalidateQueries({ queryKey: ["seller-products"] });
       queryClient.invalidateQueries({ queryKey: ["product", variables.id] });
       queryClient.invalidateQueries({ queryKey: ["new-arrivals"] });
+      queryClient.invalidateQueries({ queryKey: ["public-products"] });
+      queryClient.invalidateQueries({ queryKey: ["best-sellers"] });
     },
   });
 }

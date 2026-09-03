@@ -7,6 +7,7 @@ import {
   Store,
   Tag,
   LayoutDashboard,
+  Sparkles,
 } from "lucide-react";
 import {
   Sidebar,
@@ -29,6 +30,7 @@ const navItems = [
   { to: "/seller/products/create", label: "Create Product", icon: PlusCircle },
   { to: "/seller/promos", label: "Promo Codes", icon: Tag },
   { to: "/seller/orders", label: "Orders", icon: ShoppingBag },
+  { to: "/seller/ai-insights", label: "AI Insights", icon: Sparkles },
   { to: "/seller/settings", label: "Settings", icon: Settings },
 ];
 

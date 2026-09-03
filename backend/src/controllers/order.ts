@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { stripe } from "../lib/stripe.js";
-import { sendOrderStatusEmail } from "../lib/emails.js";
+import { inngest } from "../inngest/index.js";
 
 const VALID_DELIVERY = ["pickup", "delivery"] as const;
 const VALID_PAYMENT = ["cod", "stripe"] as const;
@@ -345,11 +345,14 @@ export async function updateOrderStatus(req: Request, res: Response) {
     });
 
     if (updated.user?.email) {
-      sendOrderStatusEmail({
-        to: updated.user.email,
-        buyerName: updated.user.name || "Customer",
-        orderId: order.id,
-        status,
+      await inngest.send({
+        name: "app/order.status.changed",
+        data: {
+          to: updated.user.email,
+          buyerName: updated.user.name || "Customer",
+          orderId: order.id,
+          status,
+        },
       });
     }
 

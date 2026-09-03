@@ -26,6 +26,7 @@ export default [
     route("seller/promos", "routes/seller/promos.tsx"),
     route("seller/orders", "routes/seller/orders.tsx"),
     route("seller/settings", "routes/seller/settings.tsx"),
+    route("seller/ai-insights", "routes/seller/ai-insights.tsx"),
   ]),
   layout("routes/admin/layout.tsx", [
     route("admin", "routes/admin/index.tsx"),

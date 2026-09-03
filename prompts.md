@@ -171,3 +171,18 @@ const resend = new Resend(process.env.RESEND_API_KEY);
     });
 
 ``
+
+46. intergrate inngest
+
+47. Seller's ai-insight page
+
+. Advise on on which products to add to their store.
+. Summarize the seller's feedback.
+
+- We will use gemini ai api
+- Each ai insight can be triggered using a button
+- Server-Sent Events (SSE) to make actions real-time
+- both actions should run on inngest
+  GEMINI_API_KEY already added to the backend/.env
+
+the issue was the model - fix but inngest function are not triggered, meaning the functions are not running in an inngest function.

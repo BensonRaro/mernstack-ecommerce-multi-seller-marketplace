@@ -47,6 +47,93 @@ async function request<T>(
   return data as T;
 }
 
+export interface SSECallbacks {
+  onChunk: (chunk: string) => void;
+  onDone: () => void;
+  onError: (error: Error) => void;
+  onStart?: () => void;
+}
+
+export function createSSEConnection(
+  endpoint: string,
+  callbacks: SSECallbacks
+): () => void {
+  const controller = new AbortController();
+  let done = false;
+
+  const markDone = () => {
+    if (!done) {
+      done = true;
+      callbacks.onDone();
+    }
+  };
+
+  fetch(`${API_BASE}${endpoint}`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    signal: controller.signal,
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+        throw new ApiError(
+          response.status,
+          data?.error || "SSE connection failed"
+        );
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No response body");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done: streamDone, value } = await reader.read();
+        if (streamDone) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === "started") {
+                callbacks.onStart?.();
+              } else if (data.type === "chunk") {
+                callbacks.onChunk(data.content);
+              } else if (data.type === "done") {
+                markDone();
+              } else if (data.type === "error") {
+                callbacks.onError(new Error(data.message));
+              }
+            } catch {
+              // Ignore parse errors for incomplete JSON
+            }
+          }
+        }
+      }
+
+      markDone();
+    })
+    .catch((error) => {
+      if (error.name !== "AbortError") {
+        callbacks.onError(error);
+      }
+    });
+
+  return () => controller.abort();
+}
+
 export const api = {
   get: <T>(endpoint: string, opts?: RequestOptions) =>
     request<T>(endpoint, { ...opts, method: "GET" }),

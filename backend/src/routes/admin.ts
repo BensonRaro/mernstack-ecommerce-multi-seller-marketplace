@@ -2,13 +2,7 @@ import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
 import { requireAuth } from "../middlewares/require-auth.js";
 import { requireAdmin } from "../middlewares/require-admin.js";
-import {
-  sendSellerApprovedEmail,
-  sendSellerRejectedEmail,
-  sendUserBannedEmail,
-  sendProductRejectedEmail,
-  sendProductApprovedEmail,
-} from "../lib/emails.js";
+import { inngest } from "../inngest/index.js";
 
 const router = Router();
 
@@ -103,9 +97,12 @@ router.patch(
       });
 
       if (seller.user.email) {
-        sendSellerApprovedEmail({
-          to: seller.user.email,
-          sellerName: seller.user.name || seller.name,
+        await inngest.send({
+          name: "app/seller.approved",
+          data: {
+            to: seller.user.email,
+            sellerName: seller.user.name || seller.name,
+          },
         });
       }
 
@@ -155,10 +152,13 @@ router.patch(
       ]);
 
       if (seller.user.email) {
-        sendSellerRejectedEmail({
-          to: seller.user.email,
-          sellerName: seller.user.name || seller.name,
-          reason: reason.trim(),
+        await inngest.send({
+          name: "app/seller.rejected",
+          data: {
+            to: seller.user.email,
+            sellerName: seller.user.name || seller.name,
+            reason: reason.trim(),
+          },
         });
       }
 
@@ -298,9 +298,12 @@ router.patch(
       });
 
       if (banned && user.email) {
-        sendUserBannedEmail({
-          to: user.email,
-          userName: user.name || "User",
+        await inngest.send({
+          name: "app/user.banned",
+          data: {
+            to: user.email,
+            userName: user.name || "User",
+          },
         });
       }
 
@@ -497,10 +500,13 @@ router.patch(
           select: { email: true },
         });
         if (sellerUser?.email) {
-          sendProductRejectedEmail({
-            to: sellerUser.email,
-            productName: product.name,
-            reason: reason!.trim(),
+          await inngest.send({
+            name: "app/product.rejected",
+            data: {
+              to: sellerUser.email,
+              productName: product.name,
+              reason: reason!.trim(),
+            },
           });
         }
       }
@@ -511,9 +517,12 @@ router.patch(
           select: { email: true },
         });
         if (sellerUser?.email) {
-          sendProductApprovedEmail({
-            to: sellerUser.email,
-            productName: product.name,
+          await inngest.send({
+            name: "app/product.approved",
+            data: {
+              to: sellerUser.email,
+              productName: product.name,
+            },
           });
         }
       }

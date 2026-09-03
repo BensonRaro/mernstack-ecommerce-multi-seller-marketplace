@@ -217,7 +217,7 @@ model OrderItem {
 	sellerId  String @db.ObjectId
 
 	order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-	product Product @relation(fields: [productId], references: [id])
+	product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
 	@@map("orderItem")
 }
@@ -251,4 +251,27 @@ model ReviewComment {
 	review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 
 	@@map("reviewComment")
+}
+
+model AiInsight {
+	id        String   @id @default(auto()) @map("_id") @db.ObjectId
+	sellerId  String   @db.ObjectId
+	type      String
+	content   String
+	createdAt DateTime @default(now())
+
+	@@map("aiInsight")
+}
+
+model AiInsightStream {
+	id        String   @id @default(auto()) @map("_id") @db.ObjectId
+	sellerId  String   @db.ObjectId
+	type      String
+	status    String   @default("processing")
+	chunks    String   @default("[]")
+	error     String?
+	createdAt DateTime @default(now())
+	updatedAt DateTime @updatedAt
+
+	@@map("aiInsightStream")
 }

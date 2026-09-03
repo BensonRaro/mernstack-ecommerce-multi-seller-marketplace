@@ -33,15 +33,27 @@ export default function SignUp() {
     e.preventDefault();
 
     if (!validateEmail(email)) {
-      toast.add({ type: "error", title: "Invalid email", description: "Please enter a valid email address." });
+      toast.add({
+        type: "error",
+        title: "Invalid email",
+        description: "Please enter a valid email address.",
+      });
       return;
     }
     if (password.length < 8) {
-      toast.add({ type: "error", title: "Weak password", description: "Password must be at least 8 characters." });
+      toast.add({
+        type: "error",
+        title: "Weak password",
+        description: "Password must be at least 8 characters.",
+      });
       return;
     }
     if (password !== confirmPassword) {
-      toast.add({ type: "error", title: "Passwords don't match", description: "Please make sure your passwords match." });
+      toast.add({
+        type: "error",
+        title: "Passwords don't match",
+        description: "Please make sure your passwords match.",
+      });
       return;
     }
 
@@ -55,17 +67,30 @@ export default function SignUp() {
     setLoading(false);
 
     if (authError) {
-      toast.add({ type: "error", title: "Sign up failed", description: authError.message || "Something went wrong. Please try again." });
+      toast.add({
+        type: "error",
+        title: "Sign up failed",
+        description:
+          authError.message || "Something went wrong. Please try again.",
+      });
       return;
     }
 
-    toast.add({ type: "success", title: "Account created!", description: "Welcome to BQG Unlimited." });
+    toast.add({
+      type: "success",
+      title: "Account created!",
+      description: "Welcome to BQG Unlimited.",
+    });
     navigate("/");
   };
 
   const handleGoogleSignUp = async () => {
     setSocialLoading(true);
-    toast.add({ type: "loading", title: "Redirecting...", description: "Taking you to Google to sign in." });
+    toast.add({
+      type: "loading",
+      title: "Redirecting...",
+      description: "Taking you to Google to sign in.",
+    });
     const { error: authError } = await authClient.signIn.social({
       provider: "google",
       callbackURL: "http://localhost:5173?auth=google",
@@ -73,7 +98,11 @@ export default function SignUp() {
     setSocialLoading(false);
 
     if (authError) {
-      toast.add({ type: "error", title: "Google sign-up failed", description: authError.message || "Please try again." });
+      toast.add({
+        type: "error",
+        title: "Google sign-up failed",
+        description: authError.message || "Please try again.",
+      });
     }
   };
 
@@ -235,12 +264,12 @@ export default function SignUp() {
           <div className="relative mx-auto w-fit">
             {/* Main product card */}
             <Card className="w-72 overflow-visible p-0">
-              <div className="relative h-48 rounded-t-lg bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="font-heading text-lg font-semibold text-foreground/60">
-                    Custom T-Shirt
-                  </span>
-                </div>
+              <div className="relative h-48 overflow-hidden rounded-t-lg bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100">
+                <img
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvDkaoOaP-SruMizjoyzvXTdHrsKc0xJZnn4qRdgXpiA&s=10"
+                  alt="Custom T-Shirt"
+                  className="h-full w-full object-cover"
+                />
               </div>
               <div className="space-y-2 p-4">
                 <div className="flex gap-0.5">

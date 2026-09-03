@@ -67,6 +67,10 @@ export function useUpdateProductStatus() {
       api.patch<{ product: AdminProduct }>(`/api/admin/products/${id}/status`, { status, reason }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-products"] });
+      qc.invalidateQueries({ queryKey: ["seller-products"] });
+      qc.invalidateQueries({ queryKey: ["new-arrivals"] });
+      qc.invalidateQueries({ queryKey: ["public-products"] });
+      qc.invalidateQueries({ queryKey: ["best-sellers"] });
     },
   });
 }

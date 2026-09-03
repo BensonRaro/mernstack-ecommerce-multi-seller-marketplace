@@ -31,11 +31,19 @@ export default function Login() {
     e.preventDefault();
 
     if (!validateEmail(email)) {
-      toast.add({ type: "error", title: "Invalid email", description: "Please enter a valid email address." });
+      toast.add({
+        type: "error",
+        title: "Invalid email",
+        description: "Please enter a valid email address.",
+      });
       return;
     }
     if (password.length < 8) {
-      toast.add({ type: "error", title: "Weak password", description: "Password must be at least 8 characters." });
+      toast.add({
+        type: "error",
+        title: "Weak password",
+        description: "Password must be at least 8 characters.",
+      });
       return;
     }
 
@@ -48,17 +56,30 @@ export default function Login() {
     setLoading(false);
 
     if (authError) {
-      toast.add({ type: "error", title: "Sign in failed", description: authError.message || "Invalid credentials. Please try again." });
+      toast.add({
+        type: "error",
+        title: "Sign in failed",
+        description:
+          authError.message || "Invalid credentials. Please try again.",
+      });
       return;
     }
 
-    toast.add({ type: "success", title: "Welcome back!", description: "You've successfully signed in." });
+    toast.add({
+      type: "success",
+      title: "Welcome back!",
+      description: "You've successfully signed in.",
+    });
     navigate("/");
   };
 
   const handleGoogleSignIn = async () => {
     setSocialLoading(true);
-    toast.add({ type: "loading", title: "Redirecting...", description: "Taking you to Google to sign in." });
+    toast.add({
+      type: "loading",
+      title: "Redirecting...",
+      description: "Taking you to Google to sign in.",
+    });
     const { error: authError } = await authClient.signIn.social({
       provider: "google",
       callbackURL: "http://localhost:5173?auth=google",
@@ -66,7 +87,11 @@ export default function Login() {
     setSocialLoading(false);
 
     if (authError) {
-      toast.add({ type: "error", title: "Google sign-in failed", description: authError.message || "Please try again." });
+      toast.add({
+        type: "error",
+        title: "Google sign-in failed",
+        description: authError.message || "Please try again.",
+      });
     }
   };
 
@@ -200,12 +225,12 @@ export default function Login() {
           {/* Product Card */}
           <div className="relative mx-auto w-fit">
             <Card className="w-72 overflow-visible p-0">
-              <div className="relative h-48 rounded-t-lg bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="font-heading text-lg font-semibold text-foreground/60">
-                    Custom T-Shirt
-                  </span>
-                </div>
+              <div className="relative h-48 overflow-hidden rounded-t-lg bg-gradient-to-br from-amber-100 via-orange-50 to-rose-100">
+                <img
+                  src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvDkaoOaP-SruMizjoyzvXTdHrsKc0xJZnn4qRdgXpiA&s=10"
+                  alt="Custom T-Shirt"
+                  className="h-full w-full object-cover"
+                />
               </div>
               <div className="space-y-2 p-4">
                 <div className="flex gap-0.5">

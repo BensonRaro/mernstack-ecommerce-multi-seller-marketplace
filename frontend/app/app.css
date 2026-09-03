@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/noto-sans";
 @import "@fontsource-variable/playfair-display";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 

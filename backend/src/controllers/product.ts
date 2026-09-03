@@ -1,7 +1,19 @@
 import { fromNodeHeaders } from "better-auth/node";
 import { auth } from "../lib/auth.js";
 import { prisma } from "../lib/prisma.js";
+import { UTApi } from "uploadthing/server";
 import type { Request, Response } from "express";
+
+const utapi = new UTApi();
+
+function extractFileKey(url: string): string | null {
+  try {
+    const parts = url.split("/");
+    return parts[parts.length - 1] || null;
+  } catch {
+    return null;
+  }
+}
 
 const VALID_CATEGORIES = [
   "fashion",
@@ -139,7 +151,16 @@ export async function listProducts(req: Request, res: Response) {
 
     // Public listings: hide products from sellers who are not approved
     if (!mine) {
-      (where as any).seller = { approved: true };
+      const approvedSellerIds = await prisma.seller.findMany({
+        where: { approved: true },
+        select: { id: true },
+      }).then((sellers) => sellers.map((s) => s.id));
+
+      if (approvedSellerIds.length === 0) {
+        return res.json({ products: [], total: 0, page, limit, totalPages: 1 });
+      }
+
+      (where as any).sellerId = { in: approvedSellerIds };
     }
 
     if (mine) {
@@ -294,8 +315,27 @@ export async function listProducts(req: Request, res: Response) {
 export async function getBestSellers(req: Request, res: Response) {
   try {
     const limit = Math.min(12, Math.max(1, parseInt(req.query.limit as string) || 6));
+
+    const approvedSellerIds = await prisma.seller.findMany({
+      where: { approved: true },
+      select: { id: true },
+    }).then((sellers) => sellers.map((s) => s.id));
+
+    if (approvedSellerIds.length === 0) {
+      return res.json({ bestSellers: [] });
+    }
+
+    const approvedProductIds = await prisma.product.findMany({
+      where: { sellerId: { in: approvedSellerIds } },
+      select: { id: true },
+    }).then((products) => products.map((p) => p.id));
+
+    if (approvedProductIds.length === 0) {
+      return res.json({ bestSellers: [] });
+    }
+
     const orderItems = await prisma.orderItem.findMany({
-      where: { order: { status: { not: "cancelled" } }, product: { seller: { approved: true } } },
+      where: { order: { status: { not: "cancelled" } }, productId: { in: approvedProductIds } },
       select: {
         productId: true,
         quantity: true,
@@ -341,27 +381,7 @@ export async function getBestSellers(req: Request, res: Response) {
       .slice(0, limit);
 
     if (sorted.length === 0) {
-      const fallback = await prisma.product.findMany({
-        where: { status: "active", seller: { approved: true } },
-        orderBy: { createdAt: "desc" },
-        take: limit,
-        include: { seller: { select: { id: true, name: true, image: true, username: true } } },
-      });
-      const fallbackIds = fallback.map((p) => p.id);
-      const reviews = fallbackIds.length ? await prisma.review.findMany({ where: { productId: { in: fallbackIds } }, select: { productId: true, rating: true } }) : [];
-      const rMap = new Map<string, number[]>();
-      for (const r of reviews) {
-        const arr = rMap.get(r.productId) ?? [];
-        arr.push(r.rating);
-        rMap.set(r.productId, arr);
-      }
-      const enrichedFallback = fallback.map((p) => {
-        const ratings = rMap.get(p.id) ?? [];
-        const total = ratings.length;
-        const avg = total ? ratings.reduce((s, v) => s + v, 0) / total : 0;
-        return { product: { ...p, avgRating: Number(avg.toFixed(1)), totalReviews: total }, unitsSold: 0, revenue: 0, orders: 0 };
-      });
-      return res.json({ bestSellers: enrichedFallback });
+      return res.json({ bestSellers: [] });
     }
 
     const productIds = sorted.map((s) => s.product!.id);
@@ -522,6 +542,14 @@ export async function deleteProduct(req: Request, res: Response) {
 
     if (existing.status === "rejected") {
       return res.status(403).json({ error: "This product has been rejected by an admin and cannot be deleted. Please contact support for details." });
+    }
+
+    const fileKeys = existing.images
+      .map(extractFileKey)
+      .filter((k): k is string => k !== null);
+
+    if (fileKeys.length > 0) {
+      await utapi.deleteFiles(fileKeys);
     }
 
     await prisma.product.delete({ where: { id } });
