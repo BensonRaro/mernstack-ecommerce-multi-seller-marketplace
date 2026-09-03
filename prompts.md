@@ -186,3 +186,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
   GEMINI_API_KEY already added to the backend/.env
 
 the issue was the model - fix but inngest function are not triggered, meaning the functions are not running in an inngest function.
+
+48. make sure both backend and frontend are ready for vercel deployment.
+
+the issue was on the backend we were using BETTER_AUTH_URL with the vercel backend url, we should be using the vercel frontend url. Since we are using vercel rewrites.

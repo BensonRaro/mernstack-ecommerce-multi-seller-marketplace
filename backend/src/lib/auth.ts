@@ -6,16 +6,21 @@ import Stripe from "stripe";
 import { prisma } from "./prisma.js";
 import { ac, buyer, seller, admin as adminRole } from "./permissions.js";
 
+const isProduction = process.env.NODE_ENV === "production";
+
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-11-17.clover",
+  apiVersion: "2026-08-26.dahlia",
 });
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "mongodb",
   }),
-  baseURL: "http://localhost:5000/",
+  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000/",
   trustedOrigins: [process.env.FRONTEND_URL || "http://localhost:5173"],
+  account: {
+    storeStateStrategy: "cookie",
+  },
   emailAndPassword: { enabled: true },
   socialProviders: {
     google: {
@@ -41,7 +46,8 @@ export const auth = betterAuth({
         try {
           if (event.type === "checkout.session.completed") {
             const session = event.data.object as Stripe.Checkout.Session;
-            const orderId = (session.metadata as Record<string, string> | null)?.orderId;
+            const orderId = (session.metadata as Record<string, string> | null)
+              ?.orderId;
             if (orderId) {
               await prisma.order.update({
                 where: { id: orderId },
@@ -54,8 +60,14 @@ export const auth = betterAuth({
               });
             }
           }
-          if (event.type === "checkout.session.expired" || event.type === "payment_intent.payment_failed") {
-            const obj = event.data.object as { id: string; metadata?: Record<string, string> | null };
+          if (
+            event.type === "checkout.session.expired" ||
+            event.type === "payment_intent.payment_failed"
+          ) {
+            const obj = event.data.object as {
+              id: string;
+              metadata?: Record<string, string> | null;
+            };
             const orderId = obj.metadata?.orderId;
             if (orderId) {
               await prisma.order.update({
@@ -70,4 +82,20 @@ export const auth = betterAuth({
       },
     }),
   ],
+  advanced: {
+    cookies: {
+      session_token: {
+        attributes: {
+          sameSite: isProduction ? "none" : "lax",
+          secure: isProduction,
+        },
+      },
+      oauth_state: {
+        attributes: {
+          sameSite: isProduction ? "none" : "lax",
+          secure: isProduction,
+        },
+      },
+    },
+  },
 });

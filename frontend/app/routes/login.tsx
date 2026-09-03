@@ -73,6 +73,8 @@ export default function Login() {
     navigate("/");
   };
 
+  const API_BASE = import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173";
+
   const handleGoogleSignIn = async () => {
     setSocialLoading(true);
     toast.add({
@@ -82,7 +84,7 @@ export default function Login() {
     });
     const { error: authError } = await authClient.signIn.social({
       provider: "google",
-      callbackURL: "http://localhost:5173?auth=google",
+      callbackURL: `${API_BASE}/?auth=google`,
     });
     setSocialLoading(false);
 

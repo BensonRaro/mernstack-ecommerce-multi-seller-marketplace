@@ -9,6 +9,7 @@
   "scripts": {
     "start": "bun run src/server.ts",
     "dev": "nodemon",
+    "postinstall": "prisma generate",
     "contract:emit": "prisma contract emit"
   },
   "keywords": [],

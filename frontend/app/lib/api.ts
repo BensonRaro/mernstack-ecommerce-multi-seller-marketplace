@@ -1,4 +1,4 @@
-const API_BASE = "http://localhost:5000";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 interface RequestOptions extends Omit<RequestInit, "method" | "body"> {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
@@ -19,7 +19,7 @@ class ApiError extends Error {
 
 async function request<T>(
   endpoint: string,
-  options: RequestOptions = {}
+  options: RequestOptions = {},
 ): Promise<T> {
   const { method = "GET", body, headers, ...rest } = options;
 
@@ -40,7 +40,7 @@ async function request<T>(
     throw new ApiError(
       res.status,
       (data as { error?: string })?.error || "Something went wrong",
-      data
+      data,
     );
   }
 
@@ -56,7 +56,7 @@ export interface SSECallbacks {
 
 export function createSSEConnection(
   endpoint: string,
-  callbacks: SSECallbacks
+  callbacks: SSECallbacks,
 ): () => void {
   const controller = new AbortController();
   let done = false;
@@ -81,7 +81,7 @@ export function createSSEConnection(
         const data = await response.json().catch(() => null);
         throw new ApiError(
           response.status,
-          data?.error || "SSE connection failed"
+          data?.error || "SSE connection failed",
         );
       }
 
