@@ -51,7 +51,7 @@ export default function Login() {
     const { error: authError } = await authClient.signIn.email({
       email,
       password,
-      callbackURL: "http://localhost:5173",
+      callbackURL: "http://localhost:5173/?auth=email",
     });
     setLoading(false);
 
@@ -73,7 +73,7 @@ export default function Login() {
     navigate("/");
   };
 
-  const API_BASE = import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173";
+  const API_BASE = "http://localhost:5173";
 
   const handleGoogleSignIn = async () => {
     setSocialLoading(true);

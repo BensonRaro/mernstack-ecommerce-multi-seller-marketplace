@@ -16,11 +16,8 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "mongodb",
   }),
-  baseURL: process.env.BETTER_AUTH_URL || "http://localhost:5000/",
-  trustedOrigins: [process.env.FRONTEND_URL || "http://localhost:5173"],
-  account: {
-    storeStateStrategy: "cookie",
-  },
+  baseURL: "http://localhost:5000",
+  trustedOrigins: ["http://localhost:5173"],
   emailAndPassword: { enabled: true },
   socialProviders: {
     google: {
@@ -82,20 +79,4 @@ export const auth = betterAuth({
       },
     }),
   ],
-  advanced: {
-    cookies: {
-      session_token: {
-        attributes: {
-          sameSite: isProduction ? "none" : "lax",
-          secure: isProduction,
-        },
-      },
-      oauth_state: {
-        attributes: {
-          sameSite: isProduction ? "none" : "lax",
-          secure: isProduction,
-        },
-      },
-    },
-  },
 });

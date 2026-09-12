@@ -62,7 +62,7 @@ export default function SignUp() {
       email,
       password,
       name: email.split("@")[0],
-      callbackURL: "http://localhost:5173",
+      callbackURL: "http://localhost:5173/?auth=email",
     });
     setLoading(false);
 
@@ -84,7 +84,7 @@ export default function SignUp() {
     navigate("/");
   };
 
-  const API_BASE = import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173";
+  const API_BASE = "http://localhost:5173";
 
   const handleGoogleSignUp = async () => {
     setSocialLoading(true);
